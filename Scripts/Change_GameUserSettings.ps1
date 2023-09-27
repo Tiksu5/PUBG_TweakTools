@@ -1,4 +1,5 @@
-﻿# Tulosta arvot, ilmota virheistä, muuta arvot jnejne. työnalla
+﻿# v0.1
+# Tulosta arvot, ilmota virheistä, muuta arvot jnejne. työnalla
 
 function ChangeValues-GameUserSettings {
     $ColumnWidth = 400

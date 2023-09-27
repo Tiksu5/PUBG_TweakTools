@@ -1,4 +1,6 @@
-﻿$global:ProgramName = "PUBG: BATTLEGROUNDS"
+﻿# v0.1
+
+$global:ProgramName = "PUBG: BATTLEGROUNDS"
 # function Set-ProgramPath päivittää ProgramPathin
 $global:ProgramPath = "null"
 $global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
@@ -94,7 +96,7 @@ Add-Type -AssemblyName System.Windows.Forms
 
 # Form
 $Form = New-Object Windows.Forms.Form -Property @{
-Text = "PUBG Tweaks"
+Text = "Tiksu Tweak Tools v0.1"
 Size = New-Object Drawing.Size(600, 600)
 }
 

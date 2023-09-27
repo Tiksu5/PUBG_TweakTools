@@ -1,4 +1,5 @@
-﻿# Poistaa Kaikki muut leffa kansiot paitsi AtoZ
+﻿# v0.1
+# Poistaa Kaikki muut leffa kansiot paitsi AtoZ
 
 function Delete-Movies {
     $MovieFolder = "$global:ProgramPath\TslGame\Content\Movies"

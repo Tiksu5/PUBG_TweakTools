@@ -1,4 +1,5 @@
-﻿# get-asennuspolku
+﻿# v0.1
+# get-asennuspolku
 
 function Find-PUBGPath {
     $Program = Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |

@@ -1,4 +1,5 @@
-﻿# Haetaan Arvot Configista
+﻿# v0.1
+# Haetaan Arvot Configista
 
 function GetValues-GameUserSettings {
 
@@ -83,5 +84,6 @@ function GetValues-GameUserSettings {
     #foreach ($Keyword in $global:Keywords) {
         #Write-Host "$Keyword$($global:KeywordValues[$Keyword])"
         #Write-Host "-----------------"
-    }
+    #}
 }
+

@@ -1,4 +1,5 @@
-﻿# Settareiden puhistus. Säilyttää kansio rakenteen ja user configin (GameUserSettings.ini)
+﻿# v0.1
+# Settareiden puhistus. Säilyttää kansio rakenteen ja user configin (GameUserSettings.ini)
 # Tyhjentää Saved folderin ja sen subfolderit.
 
 function Clean-SavedFolder {
