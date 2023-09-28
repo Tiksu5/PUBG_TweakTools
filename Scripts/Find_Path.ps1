@@ -1,6 +1,7 @@
 ﻿# v0.1
-# get-asennuspolku
+#
 
+# get-asennuspolku
 function Find-PUBGPath {
     $Program = Get-ItemProperty -Path "HKLM:\Software\Microsoft\Windows\CurrentVersion\Uninstall\*" |
                Where-Object { $_.DisplayName -eq $global:ProgramName } |
@@ -11,11 +12,11 @@ function Find-PUBGPath {
         Set-ProgramPath -NewPath $Program.InstallLocation
         $global:MainPathLabel.Text = "Asennuspolku löydetty: $global:ProgramPath"
         $global:MainPathLabel.BackColor = [System.Drawing.Color]::Green
-        $TextBox1.Text = "$global:ProgramPath"
+        $global:ChangePathTextBox.Text = "$global:ProgramPath"
         return
     } else {
         $global:MainPathLabel.Text = "Asennuspolkua ei löytyny. Syötä polku käsin"
         $global:MainPathLabel.BackColor = [System.Drawing.Color]::Red
-        $TextBox1.Text = "Syötä asennuspolku tähän"
+        $global:ChangePathTextBox.Text = "*****\SteamLibrary\steamapps\common\PUBG"
     }
 }

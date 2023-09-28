@@ -1,11 +1,11 @@
 ﻿# v0.1
+# Todo: funktiot texteille ja boxeille
 
+#
 $global:ProgramName = "PUBG: BATTLEGROUNDS"
-# function Set-ProgramPath päivittää ProgramPathin
 $global:ProgramPath = "null"
 $global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 $global:SavedFolderPath = "$env:LOCALAPPDATA\TslGame\Saved"
-$global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                         "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
@@ -15,12 +15,12 @@ $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFram
                         "MouseVerticalSensitivityMultiplierAdjusted=", "ResolutionSizeX=", "ResolutionSizeY=", "FullscreenMode=", "ColorBlindType=",
                         "sg.ViewDistanceQuality=", "sg.AntiAliasingQuality=", "sg.ShadowQuality=", "sg.PostProcessQuality=", "sg.TextureQuality=",
                         "sg.EffectsQuality=", "sg.FoliageQuality=")
-
+# Configin desimaalit, jotka bugaa
 $global:KeywordsDecimalsToCheck = @("sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                                     "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                                     "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
                                     '"Summerland_Main", ', '"Chimera_Main", ', '"Tiger_Main", ', '"Kiki_Main", ', '"Heaven_Main", ')
-
+# Scope senssit jotka bugaa
 $global:KeywordsScopesToCheck = @('"Scope6X",Sensitivity=', '"Scope8X",Sensitivity=', '"Scope15X",Sensitivity=')
 # Hashtable arvoille
 $global:KeywordValues = @{}
@@ -83,21 +83,23 @@ $global:FailingKeywords = @()
    . .\Scripts\Clean_SavedFolder.ps1
    . .\Scripts\Check_GameUserSettings.ps1
    . .\Scripts\Change_GameUserSettings.ps1
+   . .\Scripts\Confirm_Dialog.ps1
 
 Add-Type -AssemblyName System.Windows.Forms
 
 # Functions
    function Set-ProgramPath {
-    param(
-        [string]$NewPath
-        )
-    $Script:ProgramPath = $NewPath
+    param([string]$NewPath)
+    $global:ProgramPath = $NewPath
+    $global:MoviesFolderPath = "$global:ProgramPath\TslGame\Content\Movies"
+    $global:ExcludedFolderPath = "$global:ProgramPath\TslGame\Content\Movies\AtoZ"
 }
 
 # Form
-$Form = New-Object Windows.Forms.Form -Property @{
-Text = "Tiksu Tweak Tools v0.1"
-Size = New-Object Drawing.Size(600, 600)
+$MainForm = New-Object Windows.Forms.Form -Property @{
+    Text = "Tiksu Tweak Tools v0.1"
+    Size = New-Object Drawing.Size(600, 600)
+    StartPosition = "CenterScreen"
 }
 
 # Path_Label
@@ -105,142 +107,141 @@ $global:MainPathLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Asennuspolku:"
     Location = New-Object Drawing.Point(20, 20)
     Size = New-Object Drawing.Size(400, 20)
-    }
-$Form.Controls.Add($global:MainPathLabel)
+}
+$MainForm.Controls.Add($global:MainPathLabel)
 
 # Path Change Textbox
-$TextBox1 = New-Object Windows.Forms.TextBox -Property @{
+$global:ChangePathTextBox = New-Object Windows.Forms.TextBox -Property @{
     Location = New-Object Drawing.Point(20, 40)
     Size = New-Object Drawing.Size(250, 20)
-    }
-$Form.Controls.Add($TextBox1)
+}
+$MainForm.Controls.Add($global:ChangePathTextBox)
 
 # Button1 Muuta polku
-$Button1 = New-Object Windows.Forms.Button -Property @{
+$ChangePathButton = New-Object Windows.Forms.Button -Property @{
     Text = "Muuta polku"
     Location = New-Object Drawing.Point(280, 40)
     Size = New-Object Drawing.Size(75, 20)
-    }
-$Button1.Add_Click({
-      # Testaa Path
-    if (-not (Test-Path -Path $TextBox1.Text -PathType Container)) {
-        [System.Windows.Forms.MessageBox]::Show("Polkua ei löydy: $($TextBox1.Text) ") 
+}
+$ChangePathButton.Add_Click({
+    # Testaa Path
+    if (-not (Test-Path -Path $global:ChangePathTextBox.Text -PathType Container)) {
+        [System.Windows.Forms.MessageBox]::Show("Polkua ei löydy: $($global:ChangePathTextBox.Text) ") 
         return
-        }
-    Set-ProgramPath -NewPath $TextBox1.Text
+    }
+    Set-ProgramPath -NewPath $global:ChangePathTextBox.Text
     $global:MainPathLabel.Text = "Asennuspolku löydetty: $global:ProgramPath"
     $global:MainPathLabel.BackColor = [System.Drawing.Color]::Green
-    })
-$Form.Controls.Add($Button1)
+})
+$MainForm.Controls.Add($ChangePathButton)
 
-# Label2 Poista Videot 
-$Label2 = New-Object Windows.Forms.Label -Property @{
+# Poista Videot text
+$DeleteMoviesLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Poista videot, jotta peli käynnistyy nopeampaa."
     Location = New-Object Drawing.Point(20, 70)
     Size = New-Object Drawing.Size(250, 20)
 }
-$Form.Controls.Add($Label2)
+$MainForm.Controls.Add($DeleteMoviesLabel)
 
-# Label3 Poista Videot Done
-$Label3 = New-Object Windows.Forms.Label -Property @{
+# Poista Videot done text
+$global:DeleteMoviesDoneLabel = New-Object Windows.Forms.Label -Property @{
     Text = ""
     Location = New-Object Drawing.Point(100, 90)
-    Size = New-Object Drawing.Size(50, 20)
+    Size = New-Object Drawing.Size(130, 20)
 }
-$Form.Controls.Add($Label3)
+$MainForm.Controls.Add($global:DeleteMoviesDoneLabel)
 
-# Button2 Poista Videot
-$Button2 = New-Object Windows.Forms.Button -Property @{
+# Poista Videot Button
+$DeleteMoviesButton = New-Object Windows.Forms.Button -Property @{
     Text = "Poista Videot"
     Location = New-Object Drawing.Point(20, 90)
     Size = New-Object Drawing.Size(80, 20)
 }
-$Button2.Add_Click({
+$DeleteMoviesButton.Add_Click({
     Delete-Movies
-    $Label3.Text = "OK"
     })
-$Form.Controls.Add($Button2)
+$MainForm.Controls.Add($DeleteMoviesButton)
 
-# Label4 Poista Saved kansio
-$Label4 = New-Object Windows.Forms.Label -Property @{
+# Poista Saved kansio text
+$DeleteSavedFolderLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Säästää GameUserSettings.inin ja poistaa muun sisällön Saved kansiosta ja sen alikansioista"
     Location = New-Object Drawing.Point(20, 120)
     Size = New-Object Drawing.Size(350, 30)
 }
-$Form.Controls.Add($Label4)
+$MainForm.Controls.Add($DeleteSavedFolderLabel)
 
-# Label5 Poista Saved kansio Done
-$Label5 = New-Object Windows.Forms.Label -Property @{
+# Poista Saved kansio done text
+$global:DeleteSavedFolderDoneLabel = New-Object Windows.Forms.Label -Property @{
     Text = ""
     Location = New-Object Drawing.Point(100, 150)
-    Size = New-Object Drawing.Size(50, 20)
+    Size = New-Object Drawing.Size(130, 20)
 }
-$Form.Controls.Add($Label5)
+$MainForm.Controls.Add($global:DeleteSavedFolderDoneLabel)
 
-# Button3 Poista Saved-kansion tiedostot, paitsi GameUserSettings.ini
-$Button3 = New-Object Windows.Forms.Button -Property @{
+# Delete Saved kansio button
+$DeleteSavedFolderButton = New-Object Windows.Forms.Button -Property @{
     Text = "Poista Saved-kansio"
     Location = New-Object Drawing.Point(20, 150)
     Size = New-Object Drawing.Size(80, 20)
 }
-$Button3.Add_Click({
+$DeleteSavedFolderButton.Add_Click({
     Clean-SavedFolder
 })
-$Form.Controls.Add($Button3)
+$MainForm.Controls.Add($DeleteSavedFolderButton)
 
-# Label6 Hae arvot
-$Label6 = New-Object Windows.Forms.Label -Property @{
+# Hae config arvot text (GameUserSettings.ini)
+$GetConfigValuesLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä"
     Location = New-Object Drawing.Point(20, 180)
     Size = New-Object Drawing.Size(350, 30)
 }
-$Form.Controls.Add($Label6)
+$MainForm.Controls.Add($GetConfigValuesLabel)
 
-# Label7 Desimaalicheck
-$Label7 = New-Object Windows.Forms.Label -Property @{
+# Desimaalicheck text
+$global:CheckDecimalsLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Desimaalit: "
     Location = New-Object Drawing.Point(100, 210)
     Size = New-Object Drawing.Size(110, 20)
 }
-$Form.Controls.Add($Label7)
+$MainForm.Controls.Add($global:CheckDecimalsLabel)
 
-# Label8 Scopecheck
-$Label8 = New-Object Windows.Forms.Label -Property @{
+# Scopecheck text
+$global:CheckScopeSensLabel = New-Object Windows.Forms.Label -Property @{
     Text = "Scopet: "
     Location = New-Object Drawing.Point(100, 230)
     Size = New-Object Drawing.Size(110, 20)
 }
-$Form.Controls.Add($Label8)
+$MainForm.Controls.Add($global:CheckScopeSensLabel)
 
-# Button4 Hae GameUserSettings.ini arvot
-$Button4 = New-Object Windows.Forms.Button -Property @{
+ <##Hae config arvot button (GameUserSettings.ini)
+$GetConfigValuesButton = New-Object Windows.Forms.Button -Property @{
     Text = "Hae Arvot"
     Location = New-Object Drawing.Point(20, 210)
     Size = New-Object Drawing.Size(80, 20)
 }
-$Button4.Add_Click({
+$GetConfigValuesButton.Add_Click({
     GetValues-GameUserSettings
 })
-$Form.Controls.Add($Button4)
+$Form.Controls.Add($GetConfigValuesButton)
+#>
 
-# FindPath
+# FindPath/GetValues @start
 Find-PUBGPath
+Check-Movies
 GetValues-GameUserSettings
 
-# Button5 Muuta GameUserSettings.ini arvot
-$Button5 = New-Object Windows.Forms.Button -Property @{
+# Muuta GameUserSettings.ini arvot
+$ChangeConfigValuesButton = New-Object Windows.Forms.Button -Property @{
     Text = "Muuta Arvot"
     Location = New-Object Drawing.Point(20, 230)
     Size = New-Object Drawing.Size(80, 20)
 }
-$Button5.Add_Click({
+$ChangeConfigValuesButton.Add_Click({
     ChangeValues-GameUserSettings
 })
-$Form.Controls.Add($Button5)
+$MainForm.Controls.Add($ChangeConfigValuesButton)
 
+$MainForm.ShowDialog()
 
-
-$Form.ShowDialog()
-
-$Form.Dispose()
+$MainForm.Dispose()
 

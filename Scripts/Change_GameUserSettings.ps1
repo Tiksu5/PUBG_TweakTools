@@ -1,4 +1,6 @@
 ﻿# v0.1
+# Todo: Texbox formating, Korjaa save (atm korvaa kaiken datan configista eikä pelkkiä arvoja)
+
 # Tulosta arvot, ilmota virheistä, muuta arvot jnejne. työnalla
 
 function ChangeValues-GameUserSettings {
@@ -73,17 +75,16 @@ function ChangeValues-GameUserSettings {
             if ($Keyword -in $global:KeywordsDecimalsToCheck -or $Keyword -in $global:KeywordsScopesToCheck) {
                 $ModifiedValue = $TextBoxes1[$i].Text
                 
-            #Debug
+        <# Debug
             Write-Host "---------"
             Write-Host "Keyword: $Keyword"
+            Write-Host "Modified Value: $ModifiedValue"           
+            Write-Host "Path: $global:GameUserSettingsPath"         
+            Write-Host "Value: $Keyword $ModifiedValue"
             Write-Host "---------"
-            Write-Host "Modified Value: $ModifiedValue"
-            Write-Host "---------"
-            Write-Host "Path: $global:GameUserSettingsPath"
-            Write-Host "---------"
-            Write-Host "Value: $Keyword=$ModifiedValue"
-            Write-Host "---------"
-            # Set-Content -Path $global:GameUserSettingsPath -Value "$Keyword=$ModifiedValue" -Force
+        # Debug #>
+            
+            #Set-Content -Path $global:GameUserSettingsPath -Value "$Keyword=$ModifiedValue" -Force
             }
         }
 

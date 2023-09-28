@@ -1,6 +1,7 @@
 ﻿# v0.1
-# Haetaan Arvot Configista
+# Todo: Tee funktio(t?) toistuville checkeille
 
+# Haetaan Arvot Configista
 function GetValues-GameUserSettings {
 
     # Testaa Path
@@ -10,10 +11,9 @@ function GetValues-GameUserSettings {
     }
 
     $FileContent = Get-Content -Path $global:GameUserSettingsPath -Raw
-
     $KeywordsMultipleMatch = @("MouseVerticalSensitivityMultiplierAdjusted=", "ColorBlindType=")
 
-    <# TARVII JONKU ERI CHECKIN. KÄYTTÖÖN VASTA "UPLOAD SETTINGS TO CLOUD" VAIHEES
+    <## TARVII JONKU ERI CHECKIN. KÄYTTÖÖN VASTA "UPLOAD SETTINGS TO CLOUD" VAIHEES
     "bUseVsync=", "bIsEnabledHrtfRemoteWeaponSound=", "bUseInGameSmoothedFrameRate=", "bMotionBlur=", "bSharpen=",
     "InputModeCrouch=", "InputModeProne=", "InputModeWalk=", "bToggleSprint=", "InputModeHoldRotation=", "InputModeHoldBreath=",
     "InputModeHoldAngled=", "InputModePeek=", "InputModeMap=", "InputModeADS=", "InputModeAim="
@@ -45,11 +45,11 @@ function GetValues-GameUserSettings {
                 if ($Value -notlike "*.000000") {
                     $Value = "WARNING: $Value"
                     $global:FailingKeywords += $Keyword
-                    $Label7.Text = "Desimaalit: NOT OK"
-                    $Label7.BackColor = [System.Drawing.Color]::Red
+                    $global:CheckDecimalsLabel.Text = "Desimaalit: NOT OK"
+                    $global:CheckDecimalsLabel.BackColor = [System.Drawing.Color]::Red
                  } else { 
-                    $Label7.Text = "Desimaalit: OK"
-                    $Label7.BackColor = [System.Drawing.Color]::Green
+                    $global:CheckDecimalsLabel.Text = "Desimaalit: OK"
+                    $global:CheckDecimalsLabel.BackColor = [System.Drawing.Color]::Green
             }
         }
     }
@@ -72,18 +72,19 @@ function GetValues-GameUserSettings {
             }
 
             if ($ScopeCheckFail) {
-                $Label8.Text = "Scope: NOT OK"
-                $Label8.BackColor = [System.Drawing.Color]::Red
+                $global:CheckScopeSensLabel.Text = "Scope: NOT OK"
+                $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Red
             } else {
-                $Label8.Text = "Scope: OK"
-                $Label8.BackColor = [System.Drawing.Color]::Green
+                $global:CheckScopeSensLabel.Text = "Scope: OK"
+                $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Green
         }
    
     
-    #Debug
-    #foreach ($Keyword in $global:Keywords) {
-        #Write-Host "$Keyword$($global:KeywordValues[$Keyword])"
-        #Write-Host "-----------------"
-    #}
+    <# Debug
+        foreach ($Keyword in $global:Keywords) {
+        Write-Host "$Keyword$($global:KeywordValues[$Keyword])"
+        Write-Host "-----------------"
+        }
+    # Debug#>
 }
 
