@@ -1,4 +1,4 @@
-﻿# v0.3
+﻿#
 # Settareiden puhistus
 
 # Tyhjentää Saved folderin ja sen subfolderit. Säilyttää kansio rakenteen ja user configin (GameUserSettings.ini)

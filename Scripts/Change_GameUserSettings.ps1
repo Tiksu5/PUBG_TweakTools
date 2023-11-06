@@ -1,8 +1,7 @@
-﻿# v0.1
-# Todo: Texbox formating, Korjaa save (atm korvaa kaiken datan configista eikä pelkkiä arvoja)
+﻿#
+# Todo: Textbox formating, Korjaa save (atm korvaa kaiken datan configista eikä pelkkiä arvoja)
 
 # Tulosta arvot, ilmota virheistä, muuta arvot jnejne. työnalla
-
 function ChangeValues-GameUserSettings {
     $ColumnWidth = 400
     $LabelX = 20
@@ -40,9 +39,13 @@ function ChangeValues-GameUserSettings {
             $TextBox1.Text = $global:KeywordValues[$global:Keywords[$i]]
             if ($Keyword -in $global:FailingKeywords -or ('"' + $Keyword + '"') -in $global:FailingKeywords) {
                 $TextBox1.BackColor = [System.Drawing.Color]::Red
+            } elseif ($Keyword -in $global:KeywordsNotFound -or ('"' + $Keyword + '"') -in $global:KewywordsNotFound) {
+                $TextBox1.BackColor = [System.Drawing.Color]::Yellow
+                $TextBox1.Text = "Ei löydy"
             } else {
                 $TextBox1.BackColor = [System.Drawing.Color]::Green
             }
+
             $ChangeForm.Controls.Add($TextBox1)
         }
         # Array Boxeille
@@ -69,26 +72,27 @@ function ChangeValues-GameUserSettings {
         Location = New-Object Drawing.Point(680, 50)
         Size = New-Object Drawing.Size(80, 20)
     }
-    $SaveButton.Add_Click({ 
+   <# $SaveButton.Add_Click({ 
         for ($i = 0; $i -lt $global:Keywords.Count; $i++) {
             $Keyword = $global:Keywords[$i]
             if ($Keyword -in $global:KeywordsDecimalsToCheck -or $Keyword -in $global:KeywordsScopesToCheck) {
                 $ModifiedValue = $TextBoxes1[$i].Text
                 
-        <# Debug
+        # Debug
             Write-Host "---------"
             Write-Host "Keyword: $Keyword"
             Write-Host "Modified Value: $ModifiedValue"           
             Write-Host "Path: $global:GameUserSettingsPath"         
             Write-Host "Value: $Keyword $ModifiedValue"
             Write-Host "---------"
-        # Debug #>
+        # Debug 
             
-            #Set-Content -Path $global:GameUserSettingsPath -Value "$Keyword=$ModifiedValue" -Force
+            Set-Content -Path $global:GameUserSettingsPath -Value "$Keyword=$ModifiedValue" -Force
             }
         }
 
     })
+    #>
     $ChangeForm.Controls.Add($SaveButton)
 
     # Cancel

@@ -1,5 +1,5 @@
-﻿# v0.1
-# Todo: Tee funktio(t?) toistuville checkeille
+﻿#
+#Haetaan settarit configista ja tarkistetaan tiedossa olevat bugiset arvot.
 
 # Haetaan Arvot Configista
 function GetValues-GameUserSettings {
@@ -11,35 +11,27 @@ function GetValues-GameUserSettings {
     }
 
     $FileContent = Get-Content -Path $global:GameUserSettingsPath -Raw
-    $KeywordsMultipleMatch = @("MouseVerticalSensitivityMultiplierAdjusted=", "ColorBlindType=")
-
-    <## TARVII JONKU ERI CHECKIN. KÄYTTÖÖN VASTA "UPLOAD SETTINGS TO CLOUD" VAIHEES
-    "bUseVsync=", "bIsEnabledHrtfRemoteWeaponSound=", "bUseInGameSmoothedFrameRate=", "bMotionBlur=", "bSharpen=",
-    "InputModeCrouch=", "InputModeProne=", "InputModeWalk=", "bToggleSprint=", "InputModeHoldRotation=", "InputModeHoldBreath=",
-    "InputModeHoldAngled=", "InputModePeek=", "InputModeMap=", "InputModeADS=", "InputModeAim="
-    #>
     
-    
-    # get-Arvot keywordeille, joille loytyy useampi match configista.
-    $FileContent -split "`r`n" | ForEach-Object {
-        $Line = $_.Trim()
-    
-        if ($Line -match 'MouseVerticalSensitivityMultiplierAdjusted=(\d+\.\d+)') {
-            $Value = $Matches[1]
-            $global:KeywordValues["MouseVerticalSensitivityMultiplierAdjusted="] = $Value
-        }
-        if ($Line -match 'ColorBlindType=(\d+)') {
-            $Value = $Matches[1]
-            $global:KeywordValues["ColorBlindType="] = $Value
-        }
-    }
-    
+    #Hae keywordeille arvot ja ignore arvot riviltä joka alkaa "TslPersistantData"
     foreach ($Keyword in $global:Keywords) {
-        if ($Keyword -notin $KeywordsMultipleMatch) {
-            $Value = $FileContent | Select-String -Pattern "$Keyword([\d\.]+)" | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }
-            $global:KeywordValues[$Keyword] = $Value
+        $ConcatenatedContent = $FileContent -join "`n"
+        $Pattern = "$Keyword([\w\.]+)"
+        $Lines = $ConcatenatedContent -split "`n"
+        $found = $false
+
+        foreach ($Line in $Lines) {
+            if ($Line -notmatch "TslPersistantData" -and $Line -match $Pattern) {
+                $Value = $Line | Select-String -Pattern $Pattern | ForEach-Object { $_.Matches.Groups[1].Value.Trim() }
+                $global:KeywordValues[$Keyword] = $Value
+                $found = $true
+                break  
+            }
         }
-   
+        #talteen settarit joita ei löytyny configista
+        if (-not $found) {
+            $global:KeywordsNotFound += $Keyword
+        }
+
             # Check Desimaalit
             if ($Keyword -in $global:KeywordsDecimalsToCheck) {
                 if ($Value -notlike "*.000000") {
@@ -54,37 +46,52 @@ function GetValues-GameUserSettings {
         }
     }
 
-      $ScopeCheckFail = $false
-        # Check Scope senssit
+    # Check Scope senssit
+    $ScopeCheckFail = $false
+    $UniversalScopeCheckFail = $false
+    $PerScope = [double]$global:KeywordValues['"bIsUsingPerScopeMouseSensitivity="']
+
     if ([double]$global:KeywordValues['"Scope6X",Sensitivity='] -lt 7.000000){
-            $global:FailingKeywords += '"Scope6X",Sensitivity='
-            $ScopeCheckFail = $true
-            }
+        $global:FailingKeywords += '"Scope6X",Sensitivity='
+        $ScopeCheckFail = $true
+    }
+    if ([double]$global:KeywordValues['"Scope8X",Sensitivity='] -lt 13.000000){      
+        $global:FailingKeywords += '"Scope8X",Sensitivity='
+        $ScopeCheckFail = $true
+    }
+    if ([double]$global:KeywordValues['"Scope15X",Sensitivity='] -lt 22.000000){     
+        $global:FailingKeywords += '"Scope15X",Sensitivity='
+        $ScopeCheckFail = $true
+    }
+    if ([double]$global:KeywordValues['"ScopingMagnified",Sensitivity='] -lt 22.000000){
+        $global:FailingKeywords += '"ScopingMagnified",Sensitivity='
+        $UniversalScopeCheckFail = $true
+    }
 
-    if ([double]$global:KeywordValues['"Scope8X",Sensitivity='] -lt 13.000000){
-            $global:FailingKeywords += '"Scope8X",Sensitivity='
-            $ScopeCheckFail = $true
-            }
-
-    if ([double]$global:KeywordValues['"Scope15X",Sensitivity='] -lt 22.000000){
-            $global:FailingKeywords += '"Scope15X",Sensitivity='
-            $ScopeCheckFail = $true
-            }
-
-            if ($ScopeCheckFail) {
-                $global:CheckScopeSensLabel.Text = "Scope: NOT OK"
-                $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Red
-            } else {
-                $global:CheckScopeSensLabel.Text = "Scope: OK"
-                $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Green
-        }
+    if (($ScopeCheckFail -and $PerScope) -or ($UniversalScopeCheckFail -and -not $PerScope)){
+        $global:CheckScopeSensLabel.Text = "Scope: NOT OK"
+        $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Red
+    } elseif ($ScopeCheckFail -and -not $PerScope){
+        $global:CheckScopeSensLabel.Text = "Scope: OK"
+        $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Yellow
+        $global:ToolTip.SetToolTip($global:CheckScopeSensLabel, "Joku perscope sensseistä on liian pieni, mutta universal scope sens käytössä ja se on OK")
+    } elseif ($UniversalScopeCheckFail -and $PerScope){
+        $global:CheckScopeSensLabel.Text = "Scope: OK"
+        $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Yellow
+        $global:ToolTip.SetToolTip($global:CheckScopeSensLabel, "Universal scope senssi liian pieni, mutta per scope senssit käytössä ja on OK")
+    } else {
+        $global:CheckScopeSensLabel.Text = "Scope: OK"
+        $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Green
+    }
    
-    
+
     <# Debug
         foreach ($Keyword in $global:Keywords) {
         Write-Host "$Keyword$($global:KeywordValues[$Keyword])"
         Write-Host "-----------------"
-        }
-    # Debug#>
+       }
+        write-host "..........."
+        write-host "$PerScope"
+    # Debug #>
 }
 

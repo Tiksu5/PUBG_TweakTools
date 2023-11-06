@@ -1,5 +1,7 @@
-﻿# v0.4
+﻿#
 #
+
+
 $script:ItemsInMoviesFolder = "null"
 $script:MoviesFound = $false
 

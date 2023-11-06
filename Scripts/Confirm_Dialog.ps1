@@ -1,4 +1,4 @@
-﻿#v0.2
+﻿#
 #
 
 # Kyllä/Ei Confirm

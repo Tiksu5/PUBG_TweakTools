@@ -1,4 +1,4 @@
-﻿# v0.1
+﻿#
 #
 
 # get-asennuspolku
