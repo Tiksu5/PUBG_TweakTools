@@ -7,7 +7,6 @@ Todo:
         lisää loputki asetukset listalle
         
     Clean_SavedFolder
-        säilytä myös replat. Kysymys?
         säilytä muut configit? engine.ini yms?
         tee/ anna vaihtoehto kansion backuppiin / Gameusersettings.inin backup?
 

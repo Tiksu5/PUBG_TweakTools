@@ -5,7 +5,10 @@
 $global:ProgramName = "PUBG: BATTLEGROUNDS"
 $global:ProgramPath = "null"
 $global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
+$global:ReplayFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Demos"
+$global:ObserverFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer"
 $global:SavedFolderPath = "$env:LOCALAPPDATA\TslGame\Saved"
+$global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath )
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                         "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
@@ -154,6 +157,25 @@ function CreateTextBox {
     return $textbox
 }
 
+function CreateCheckBox {
+    param (
+        [string]$text,
+        [int]$locx,
+        [int]$locy,
+        [int]$sizex,
+        [int]$sizey
+    )
+
+    $checkbox = New-Object System.Windows.Forms.CheckBox -Property @{
+        Text = "$text"
+        Location = New-Object Drawing.Point($locx, $locy)
+        Size = New-Object System.Drawing.Point($sizex, $sizey)
+    }
+
+    return $checkbox
+}
+
+
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
     Text = "Tiksu Tweak Tools v0.1"
@@ -203,6 +225,30 @@ $MainForm.Controls.Add($DeleteMoviesButton)
 $DeleteSavedFolderLabel = CreateLabel -text "Säästää GameUserSettings.inin ja poistaa muun sisällön Saved kansiosta ja sen alikansioista" -locx 20 -locy 120 -sizex 350 -sizey 30
 $MainForm.Controls.Add($DeleteSavedFolderLabel)
 
+# Keep Replays checkbox
+$global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 175 -sizex 170 -sizey 20
+$global:KeepReplaysCheckBox.Checked = $true
+$global:KeepReplaysCheckBox.add_CheckedChanged({
+    if ($global:KeepReplaysCheckBox.Checked) {
+        $global:ExcludedFolders += $global:ReplayFolderPath
+    } else {
+        $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ReplayFolderPath
+    }
+})
+$MainForm.Controls.Add($global:KeepReplaysCheckBox)
+
+# Observerpack checkbox
+$global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 195 -sizex 170 -sizey 20
+$global:KeepObserverCheckBox.Checked = $true
+$global:KeepObserverCheckBox.add_CheckedChanged({
+    if ($global:KeepObserverCheckBox.Checked) {
+        $global:ExcludedFolders += $global:ObserverFolderPath
+    } else {
+        $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ObserverFolderPath
+    }
+})
+$MainForm.Controls.Add($global:KeepObserverCheckBox)
+
 # Poista Saved kansio done text
 $global:DeleteSavedFolderDoneLabel = CreateLabel -text "" -locx 100 -locy 150 -sizex 130 -sizey 20
 $MainForm.Controls.Add($global:DeleteSavedFolderDoneLabel)
@@ -215,19 +261,19 @@ $DeleteSavedFolderButton.Add_Click({
 $MainForm.Controls.Add($DeleteSavedFolderButton)
 
 # Hae config arvot text (GameUserSettings.ini)
-$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 180 -sizex 350 -sizey 30
+$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 220 -sizex 350 -sizey 30
 $MainForm.Controls.Add($GetConfigValuesLabel)
 
 # Desimaalicheck text
-$global:CheckDecimalsLabel = CreateLabel -text "Desimaalit: " -locx 100 -locy 210 -sizex 110 -sizey 20
+$global:CheckDecimalsLabel = CreateLabel -text "Desimaalit: " -locx 100 -locy 250 -sizex 110 -sizey 20
 $MainForm.Controls.Add($global:CheckDecimalsLabel)
 
 # Scopecheck text
-$global:CheckScopeSensLabel = CreateLabel -text "Scopet: " -locx 100 -locy 230 -sizex 110 -sizey 20
+$global:CheckScopeSensLabel = CreateLabel -text "Scopet: " -locx 100 -locy 270 -sizex 110 -sizey 20
 $MainForm.Controls.Add($global:CheckScopeSensLabel)
 
  <##Hae config arvot button (GameUserSettings.ini)
-$GetConfigValuesButton = CreateButton -text "Hae Arvot" -locx 20 -locy 210 -sizex 80 -sizey 20
+$GetConfigValuesButton = CreateButton -text "Hae Arvot" -locx 20 -locy 250 -sizex 80 -sizey 20
 $GetConfigValuesButton.Add_Click({
     GetValues-GameUserSettings
 })
@@ -240,7 +286,7 @@ Check-Movies
 GetValues-GameUserSettings
 
 # Muuta GameUserSettings.ini arvot
-$ChangeConfigValuesButton = CreateButton -text "Muuta Arvot" -locx 20 -locy 230 -sizex 80 -sizey 20
+$ChangeConfigValuesButton = CreateButton -text "Muuta Arvot" -locx 20 -locy 270 -sizex 80 -sizey 20
 $ChangeConfigValuesButton.Add_Click({
     ChangeValues-GameUserSettings
 })
