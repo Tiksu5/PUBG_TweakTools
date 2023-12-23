@@ -1,13 +1,27 @@
 ﻿#
 #
 
-#
+# Assemblies
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName WindowsFormsIntegration
+Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName WindowsBase
+Add-Type -AssemblyName PresentationCore
+
+[System.Windows.Forms.Application]::EnableVisualStyles();
+
+# Variables
 $global:ProgramName = "PUBG: BATTLEGROUNDS"
 $global:ProgramPath = "null"
 $global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
+$global:CrashesFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Crashes"
 $global:ReplayFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Demos"
 $global:ObserverFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer"
 $global:SavedFolderPath = "$env:LOCALAPPDATA\TslGame\Saved"
+$global:ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$global:DefaultSavedObserverPackLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "ObserverPacks"
+$global:ToolTip = New-Object System.Windows.Forms.ToolTip
 $global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath )
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
@@ -90,10 +104,7 @@ $global:KeywordsNotFound = @()
    . .\Scripts\Check_GameUserSettings.ps1
    . .\Scripts\Change_GameUserSettings.ps1
    . .\Scripts\Confirm_Dialog.ps1
-
-Add-Type -AssemblyName System.Windows.Forms
-
-$global:ToolTip = New-Object System.Windows.Forms.ToolTip
+   . .\Scripts\Change_LogoPack.ps1
 
 # Functions
 function Set-ProgramPath {
@@ -175,6 +186,21 @@ function CreateCheckBox {
     return $checkbox
 }
 
+function CreateDropDownMenu {
+    param (
+        [int]$locx,
+        [int]$locy,
+        [int]$sizex,
+        [int]$sizey
+    )
+
+    $dropdown = New-Object System.Windows.Forms.ComboBox -Property @{
+        Location = New-Object Drawing.Point($locx, $locy)
+        Size = New-Object System.Drawing.Point($sizex, $sizey)
+    }
+
+    return $dropdown
+}
 
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
@@ -226,7 +252,7 @@ $DeleteSavedFolderLabel = CreateLabel -text "Säästää GameUserSettings.inin j
 $MainForm.Controls.Add($DeleteSavedFolderLabel)
 
 # Keep Replays checkbox
-$global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 175 -sizex 170 -sizey 20
+$global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 150 -sizex 170 -sizey 20
 $global:KeepReplaysCheckBox.Checked = $true
 $global:KeepReplaysCheckBox.add_CheckedChanged({
     if ($global:KeepReplaysCheckBox.Checked) {
@@ -238,7 +264,7 @@ $global:KeepReplaysCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepReplaysCheckBox)
 
 # Observerpack checkbox
-$global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 195 -sizex 170 -sizey 20
+$global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 170 -sizex 170 -sizey 20
 $global:KeepObserverCheckBox.Checked = $true
 $global:KeepObserverCheckBox.add_CheckedChanged({
     if ($global:KeepObserverCheckBox.Checked) {
@@ -250,11 +276,11 @@ $global:KeepObserverCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepObserverCheckBox)
 
 # Poista Saved kansio done text
-$global:DeleteSavedFolderDoneLabel = CreateLabel -text "" -locx 100 -locy 150 -sizex 130 -sizey 20
+$global:DeleteSavedFolderDoneLabel = CreateLabel -text "" -locx 100 -locy 190 -sizex 130 -sizey 20
 $MainForm.Controls.Add($global:DeleteSavedFolderDoneLabel)
 
 # Delete Saved kansio button
-$DeleteSavedFolderButton = CreateButton -text "Poista Saved-kansio" -locx 20 -locy 150 -sizex 80 -sizey 20
+$DeleteSavedFolderButton = CreateButton -text "Poista Saved-kansio" -locx 20 -locy 190 -sizex 80 -sizey 20
 $DeleteSavedFolderButton.Add_Click({
     Clean-SavedFolder
 })
@@ -285,12 +311,47 @@ Find-PUBGPath
 Check-Movies
 GetValues-GameUserSettings
 
-# Muuta GameUserSettings.ini arvot
+# Muuta GameUserSettings.ini arvot button
 $ChangeConfigValuesButton = CreateButton -text "Muuta Arvot" -locx 20 -locy 270 -sizex 80 -sizey 20
 $ChangeConfigValuesButton.Add_Click({
     ChangeValues-GameUserSettings
 })
 $MainForm.Controls.Add($ChangeConfigValuesButton)
+
+# Logopaketti Text
+$ObserverPackLabel = CreateLabel -text "Vaihda/Luo observerpaketti" -locx 420 -locy 70 -sizex 150 -sizey 20
+$MainForm.Controls.Add($ObserverPackLabel)
+
+# Test löytyykö Logopakettien kansio, tekee jos ei löydy
+if (-not (Test-Path -Path $DefaultSavedObserverPackLocation -PathType Container)) {
+    New-Item -Path $DefaultSavedObserverPackLocation -ItemType Directory
+}
+
+# Logopaketti dropdown
+$ObserverPackSelect = CreateDropDownMenu -locx 420 -locy 90 -sizex 150 -sizey 20
+
+# Haetaan valmiit logopaketit dropdownin valinnoiksi
+$global:SelectionFolders = Get-ChildItem -Path $global:DefaultSavedObserverPackLocation -Directory | Select-Object -ExpandProperty Name
+$global:ObserverPackSelect.Items.AddRange($global:SelectionFolders)
+$DefaultOption = "Default"
+$global:ObserverPackSelect.Items.Add($DefaultOption)
+$global:ObserverPackSelect.SelectedItem = $DefaultOption
+$MainForm.Controls.Add($global:ObserverPackSelect)
+
+# Logopaketti vaihto button
+$ChangeObserverPackButton = CreateButton -text "Vaihda" -locx 420 -locy 110 -sizex 80 -sizey 20
+$ChangeObserverPackButton.Add_Click({
+    $global:SelectedItem = $global:ObserverPackSelect.SelectedItem
+    Change-LogoPack
+})
+$MainForm.Controls.Add($ChangeObserverPackButton)
+
+# Logopaketti new button
+$CreateObserverPackButton = CreateButton -text "Luo Uusi" -locx 500 -locy 110 -sizex 80 -sizey 20
+$CreateObserverPackButton.Add_Click({
+    Create-LogoPackForm
+})
+$MainForm.Controls.Add($CreateObserverPackButton)
 
 $MainForm.ShowDialog()
 

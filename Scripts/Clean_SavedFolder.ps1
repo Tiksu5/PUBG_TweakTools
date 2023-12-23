@@ -36,7 +36,7 @@ function Clean-SavedFolder {
     # Check onko poistettavaa
     if ($ItemsToDelete.Count -eq 0) {
         $global:DeleteSavedFolderDoneLabel.Text = "Ei poistettavia filuja"
-        $global:DeleteSavedFolderDoneLabel.BackColor = [System.Drawing.Color]::Yellow
+        $global:DeleteSavedFolderDoneLabel.BackColor = [System.Drawing.Color]::Green
         return
     }
     # user confirm poistolle
@@ -44,6 +44,20 @@ function Clean-SavedFolder {
     if ($confirmationResult -eq [Windows.Forms.DialogResult]::Yes) {
         foreach ($Item in $ItemsToDelete) {
             Remove-Item -Path $Item.FullName -Force
+        }
+        $ReplaySubFolders = Get-ChildItem -Path $global:ReplayFolderPath -Directory
+        foreach ($ReplaySubFolder in $ReplaySubFolders) {
+            $FilesInReplaySubFolder = Get-ChildItem -Path $ReplaySubFolder.FullName -File
+            if (-not $FilesInReplaySubFolder) {
+                Remove-Item -Path $ReplaySubFolder.FullName -Force -Recurse
+            }
+        }
+        $CrashesSubFolders = Get-ChildItem -Path $global:CrashesFolderPath -Directory
+        foreach ($CrashesSubFolder in $CrashesSubFolders) {
+            $FilesInCrashesSubFolder = Get-ChildItem -Path $CrashesSubFolder.FullName -File
+            if (-not $FilesInCrashesSubFolder) {
+                Remove-Item -Path $CrashesSubFolder.FullName -Force -Recurse
+            }
         }
         $global:DeleteSavedFolderDoneLabel.Text = "Saved kansio siivottu!"
         $global:DeleteSavedFolderDoneLabel.BackColor = [System.Drawing.Color]::Green
