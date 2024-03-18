@@ -45,7 +45,7 @@ function GetValues-GameUserSettings {
             }
         }
     }
-
+    <# SCOPE SENSSIT FIXATTU PATCHIS 28.2
     # Check Scope senssit
     $ScopeCheckFail = $false
     $UniversalScopeCheckFail = $false
@@ -83,15 +83,7 @@ function GetValues-GameUserSettings {
         $global:CheckScopeSensLabel.Text = "Scope: OK"
         $global:CheckScopeSensLabel.BackColor = [System.Drawing.Color]::Green
     }
-   
+   #>
 
-    <# Debug
-        foreach ($Keyword in $global:Keywords) {
-        Write-Host "$Keyword$($global:KeywordValues[$Keyword])"
-        Write-Host "-----------------"
-       }
-        write-host "..........."
-        write-host "$PerScope"
-    # Debug #>
 }
 

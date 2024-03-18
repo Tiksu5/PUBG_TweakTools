@@ -17,8 +17,8 @@ function Change-LogoPack {
         }
     }
     # Kopioi uus paketti tilalle
-    if ($global:SelectedItem -ne "Default") {
-        $script:FilesInSelectedObserverPack = Get-ChildItem -Path $global:SelectedItem -Force -Recurse
+    if ($global:ObserverPackSelectedItem -ne "Default") {
+        $script:FilesInSelectedObserverPack = Get-ChildItem -Path $global:ObserverPackSelectedItem -Force -Recurse
         foreach ($File in $script:FilesInSelectedObserverPack) {
             $FilesInsideDirectory = Get-ChildItem -Path $File.FullName
             foreach ($FileInsideDirectory in $FilesInsideDirectory) {
