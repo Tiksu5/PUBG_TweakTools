@@ -67,11 +67,12 @@ function ChangeValues-GameUserSettings {
     }
 
     # Save
-    $SaveButton = New-Object Windows.Forms.Button -Property @{
+    <# $SaveButton = New-Object Windows.Forms.Button -Property @{
         Text = "Apply"
         Location = New-Object Drawing.Point(680, 50)
         Size = New-Object Drawing.Size(80, 20)
     }
+    #>
    <# $SaveButton.Add_Click({ 
         for ($i = 0; $i -lt $global:Keywords.Count; $i++) {
             $Keyword = $global:Keywords[$i]

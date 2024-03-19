@@ -45,6 +45,15 @@ Add-Type -AssemblyName WindowsFormsIntegration
 Add-Type -AssemblyName PresentationFramework
 Add-Type -AssemblyName WindowsBase
 Add-Type -AssemblyName PresentationCore
+# .Net methods for hiding/showing the console in the background
+Add-Type -Name Window -Namespace Console -MemberDefinition '
+[DllImport("Kernel32.dll")]
+public static extern IntPtr GetConsoleWindow();
+
+[DllImport("user32.dll")]
+public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
+'
+
 
 [System.Windows.Forms.Application]::EnableVisualStyles();
 
@@ -61,13 +70,14 @@ $global:DefaultSavedObserverPackLocation = Join-Path -Path $global:ScriptDirecto
 $global:DefaultSoundsLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "Sounds"
 $global:ToolTip = New-Object System.Windows.Forms.ToolTip
 $global:BootTimer = $null
+$ConsolePtr = [Console.Window]::GetConsoleWindow()
 $global:DefaultBackColor = [System.Drawing.Color]::White
 $global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath )
 $global:ExcludedFoldersAtStart = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath )
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                         "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
-                        '"Summerland_Main", ', '"Chimera_Main", ', '"Tiger_Main", ', '"Kiki_Main", ', '"Heaven_Main", ', '"Normal",Sensitivity=',
+                        '"Summerland_Main", ', '"Chimera_Main", ', '"Tiger_Main", ', '"Kiki_Main", ', '"Heaven_Main", ', '"Neon_Main", ', '"Normal",Sensitivity=',
                         '"Targeting",Sensitivity=', '"Scoping",Sensitivity=', '"ScopingMagnified",Sensitivity=', '"Scope2X",Sensitivity=',
                         '"Scope3X",Sensitivity=', '"Scope4X",Sensitivity=', '"Scope6X",Sensitivity=', '"Scope8X",Sensitivity=', '"Scope15X",Sensitivity=',
                         "MouseVerticalSensitivityMultiplierAdjusted=", "ResolutionSizeX=", "ResolutionSizeY=", "FullscreenMode=", "ColorBlindType=",
@@ -79,7 +89,7 @@ $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFram
 $global:KeywordsDecimalsToCheck = @("sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                                     "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                                     "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
-                                    '"Summerland_Main", ', '"Chimera_Main", ', '"Tiger_Main", ', '"Kiki_Main", ', '"Heaven_Main", ')
+                                    '"Summerland_Main", ', '"Chimera_Main", ', '"Tiger_Main", ', '"Kiki_Main", ', '"Heaven_Main", ', '"Neon_Main", ')
 <# SCOPE SENSSIT FIXATTU PATCHIS 28.2
 Scope senssit jotka bugaa
 $global:KeywordsScopesToCheck = @('"Scope6X",Sensitivity=', '"Scope8X",Sensitivity=', '"Scope15X",Sensitivity=', '"ScopingMagnified",Sensitivity=')
@@ -142,15 +152,15 @@ $global:KeywordsNotFound = @()
 
 
 # Scripts
-   . .\Scripts\Find_Path.ps1
-   . .\Scripts\Delete_Movies.ps1
-   . .\Scripts\Clean_SavedFolder.ps1
-   . .\Scripts\Check_GameUserSettings.ps1
-   . .\Scripts\Change_GameUserSettings.ps1
-   . .\Scripts\Confirm_Dialog.ps1
-   . .\Scripts\Change_LogoPack.ps1
-   . .\Scripts\Kill_Pubg.ps1
-   . .\Scripts\Boot_Timer.ps1
+. "$PSScriptRoot\Scripts\Find_Path.ps1"
+. "$PSScriptRoot\Scripts\Delete_Movies.ps1"
+. "$PSScriptRoot\Scripts\Clean_SavedFolder.ps1"
+. "$PSScriptRoot\Scripts\Check_GameUserSettings.ps1"
+. "$PSScriptRoot\Scripts\Change_GameUserSettings.ps1"
+. "$PSScriptRoot\Scripts\Confirm_Dialog.ps1"
+. "$PSScriptRoot\Scripts\Change_LogoPack.ps1"
+. "$PSScriptRoot\Scripts\Kill_Pubg.ps1"
+. "$PSScriptRoot\Scripts\Boot_Timer.ps1"
 
 # Functions
 function Set-ProgramPath {
@@ -247,25 +257,51 @@ function CreateDropDownMenu {
 
     return $dropdown
 }
+# Hide Console
+[Console.Window]::ShowWindow($ConsolePtr, 0)
 
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
-    Text = "Tiksu Tweak Tools v0.1"
+    Text = "Tiksu Tweak Tools v0.2"
     Size = New-Object Drawing.Size(600, 600)
     StartPosition = "CenterScreen"
     BackColor = $global:DefaultBackColor
 }
 
+$MenuStrip = New-Object System.Windows.Forms.MenuStrip
+$MainForm.Controls.Add($MenuStrip)
+
+# File menu
+$FileMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$FileMenuItem.Text = "&File"
+
+ # ShowConsole menu nappi
+$ShowConsoleMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$ShowConsoleMenuItem.Text = "&Show Console"
+$ShowConsoleMenuItem.Add_Click({
+    [Console.Window]::ShowWindow($ConsolePtr, 4)
+})
+
+# Exit menu nappi
+$ExitMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$ExitMenuItem.Text = "&Exit"
+$ExitMenuItem.Add_Click({
+    $MainForm.Close()
+})
+
+$FileMenuItem.DropDownItems.AddRange(@($ShowConsoleMenuItem, $ExitMenuItem))
+$MenuStrip.Items.Add($FileMenuItem) | Out-Null
+
 # Path_Label
-$global:MainPathLabel = CreateLabel -text "Asennuspolku:" -locx 20 -locy 15 -sizex 320 -sizey 25
+$global:MainPathLabel = CreateLabel -text "Asennuspolku:" -locx 20 -locy 25 -sizex 320 -sizey 25
 $MainForm.Controls.Add($global:MainPathLabel)
 
 # Path Change Textbox
-$global:ChangePathTextBox = CreateTextBox -locx 20 -locy 40 -sizex 250 -sizey 20
+$global:ChangePathTextBox = CreateTextBox -locx 20 -locy 50 -sizex 250 -sizey 20
 $MainForm.Controls.Add($global:ChangePathTextBox)
 
 # ChangePathButton Muuta polku
-$ChangePathButton = CreateButton -text "Muuta Polku" -locx 270 -locy 40 -sizex 75 -sizey 20
+$ChangePathButton = CreateButton -text "Muuta Polku" -locx 270 -locy 50 -sizex 75 -sizey 20
 $ChangePathButton.Add_Click({
     # Testaa Path
     if (-not (Test-Path -Path $global:ChangePathTextBox.Text -PathType Container)) {
@@ -279,15 +315,15 @@ $ChangePathButton.Add_Click({
 $MainForm.Controls.Add($ChangePathButton)
 
 # Poista Videot text
-$DeleteMoviesLabel = CreateLabel -text "Poista videot, jotta peli käynnistyy nopeampaa." -locx 20 -locy 70 -sizex 250 -sizey 20
+$DeleteMoviesLabel = CreateLabel -text "Poista videot, jotta peli käynnistyy nopeampaa." -locx 20 -locy 80 -sizex 250 -sizey 20
 $MainForm.Controls.Add($DeleteMoviesLabel)
 
 # Poista Videot done text
-$global:DeleteMoviesDoneLabel = CreateLabel -text "" -locx 100 -locy 90 -sizex 130 -sizey 20
+$global:DeleteMoviesDoneLabel = CreateLabel -text "" -locx 100 -locy 100 -sizex 130 -sizey 20
 $MainForm.Controls.Add($global:DeleteMoviesDoneLabel)
 
 # Poista Videot Button
-$DeleteMoviesButton = CreateButton -text "Poista leffat" -locx 20 -locy 90 -sizex 80 -sizey 20
+$DeleteMoviesButton = CreateButton -text "Poista leffat" -locx 20 -locy 100 -sizex 80 -sizey 20
 
 $DeleteMoviesButton.Add_Click({
     Delete-Movies
@@ -295,11 +331,11 @@ $DeleteMoviesButton.Add_Click({
 $MainForm.Controls.Add($DeleteMoviesButton)
 
 # Poista Saved kansio text
-$DeleteSavedFolderLabel = CreateLabel -text "Säästää GameUserSettings.inin ja poistaa muun sisällön Saved kansiosta ja sen alikansioista" -locx 20 -locy 120 -sizex 300 -sizey 30
+$DeleteSavedFolderLabel = CreateLabel -text "Säästää GameUserSettings.inin ja poistaa muun sisällön Saved kansiosta ja sen alikansioista" -locx 20 -locy 130 -sizex 300 -sizey 30
 $MainForm.Controls.Add($DeleteSavedFolderLabel)
 
 # Keep Replays checkbox
-$global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 150 -sizex 150 -sizey 20
+$global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 160 -sizex 150 -sizey 20
 $global:KeepReplaysCheckBox.Checked = $false
 $global:KeepReplaysCheckBox.add_CheckedChanged({
     if ($global:KeepReplaysCheckBox.Checked) {
@@ -311,7 +347,7 @@ $global:KeepReplaysCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepReplaysCheckBox)
 
 # Keep Observerpack checkbox
-$global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 170 -sizex 150 -sizey 20
+$global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 180 -sizex 150 -sizey 20
 $global:KeepObserverCheckBox.Checked = $false
 $global:KeepObserverCheckBox.add_CheckedChanged({
     if ($global:KeepObserverCheckBox.Checked) {
@@ -323,7 +359,7 @@ $global:KeepObserverCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepObserverCheckBox)
 
 # Keep Crashes checkbox
-$global:KeepCrashesCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 160 -locy 150 -sizex 150 -sizey 20
+$global:KeepCrashesCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 160 -locy 160 -sizex 150 -sizey 20
 $global:KeepCrashesCheckBox.Checked = $false
 $global:KeepCrashesCheckBox.add_CheckedChanged({
     if ($global:KeepCrashesCheckBox.Checked) {
@@ -335,22 +371,22 @@ $global:KeepCrashesCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepCrashesCheckBox)
 
 # Poista Saved kansio done text
-$global:DeleteSavedFolderDoneLabel = CreateLabel -text "" -locx 100 -locy 190 -sizex 130 -sizey 20
+$global:DeleteSavedFolderDoneLabel = CreateLabel -text "" -locx 100 -locy 200 -sizex 130 -sizey 20
 $MainForm.Controls.Add($global:DeleteSavedFolderDoneLabel)
 
 # Delete Saved kansio button
-$DeleteSavedFolderButton = CreateButton -text "Poista Saved-kansio" -locx 20 -locy 190 -sizex 80 -sizey 20
+$DeleteSavedFolderButton = CreateButton -text "Poista Saved-kansio" -locx 20 -locy 200 -sizex 80 -sizey 20
 $DeleteSavedFolderButton.Add_Click({
     Clean-SavedFolder
 })
 $MainForm.Controls.Add($DeleteSavedFolderButton)
 
 # Hae config arvot text (GameUserSettings.ini)
-$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 220 -sizex 350 -sizey 30
+$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 230 -sizex 350 -sizey 30
 $MainForm.Controls.Add($GetConfigValuesLabel)
 
 # Desimaalicheck text
-$global:CheckDecimalsLabel = CreateLabel -text "Desimaalit: " -locx 100 -locy 250 -sizex 110 -sizey 20
+$global:CheckDecimalsLabel = CreateLabel -text "Desimaalit: " -locx 100 -locy 260 -sizex 110 -sizey 20
 $MainForm.Controls.Add($global:CheckDecimalsLabel)
 
 <# SCOPE SENSSIT FIXATTU PATCHIS 28.2
@@ -374,14 +410,14 @@ Check-Movies
 GetValues-GameUserSettings
 
 # Muuta GameUserSettings.ini arvot button
-$ChangeConfigValuesButton = CreateButton -text "Muuta Arvot" -locx 20 -locy 270 -sizex 80 -sizey 20
+$ChangeConfigValuesButton = CreateButton -text "Katso arvot" -locx 20 -locy 280 -sizex 80 -sizey 20
 $ChangeConfigValuesButton.Add_Click({
     ChangeValues-GameUserSettings
 })
 $MainForm.Controls.Add($ChangeConfigValuesButton)
 
 # Logopaketti Text
-$ObserverPackLabel = CreateLabel -text "Vaihda/Luo observerpaketti" -locx 415 -locy 490 -sizex 150 -sizey 20
+$ObserverPackLabel = CreateLabel -text "Vaihda Logopaketti" -locx 415 -locy 490 -sizex 150 -sizey 20
 $MainForm.Controls.Add($ObserverPackLabel)
 
 # Test löytyykö Logopakettien kansio, tekee jos ei löydy
@@ -406,25 +442,26 @@ $ChangeObserverPackButton.Add_Click({
     Change-LogoPack
 })
 $MainForm.Controls.Add($ChangeObserverPackButton)
-
-# Logopaketti new button
-$CreateObserverPackButton = CreateButton -text "Luo Uusi" -locx 490 -locy 530 -sizex 80 -sizey 20
-$CreateObserverPackButton.Add_Click({
-    Create-LogoPackForm
+<# # Disabled work in progress
+ Logopaketti new button
+ $CreateObserverPackButton = CreateButton -text "Luo Uusi" -locx 490 -locy 530 -sizex 80 -sizey 20
+ $CreateObserverPackButton.Add_Click({
+     Create-LogoPackForm
 })
 $MainForm.Controls.Add($CreateObserverPackButton)
+#>
 
 # Launch Settings Label
-$LaunchSettingsLabel = CreateLabel -text "Käynnistys asetukset" -locx 360 -locy 40 -sizex 300 -sizey 15
+$LaunchSettingsLabel = CreateLabel -text "Käynnistys asetukset" -locx 360 -locy 50 -sizex 300 -sizey 15
 $MainForm.Controls.Add($LaunchSettingsLabel)
 
 # Poista leffat checkbox startille
-$global:DeleteMoviesAtStartCheckBox = CreateCheckBox -text "Poista Leffat" -locx 360 -locy 100 -sizex 130 -sizey 20
+$global:DeleteMoviesAtStartCheckBox = CreateCheckBox -text "Poista Leffat" -locx 360 -locy 110 -sizex 130 -sizey 20
 $global:DeleteMoviesAtStartCheckBox.Checked = $true
 $MainForm.Controls.Add($global:DeleteMoviesAtStartCheckBox)
 
 # Tyhjennä saved folder checkbox startille
-$global:DeleteSavedAtStartCheckBox = CreateCheckBox -text "Tyhjennä Saved Folder" -locx 360 -locy 120 -sizex 170 -sizey 20
+$global:DeleteSavedAtStartCheckBox = CreateCheckBox -text "Tyhjennä Saved Folder" -locx 360 -locy 130 -sizex 170 -sizey 20
 $global:DeleteSavedAtStartCheckBox.Checked = $true
 # Lisävalintojen Visibility
 $global:DeleteSavedAtStartCheckBox.Add_CheckStateChanged({
@@ -438,7 +475,7 @@ $global:DeleteSavedAtStartCheckBox.Add_CheckStateChanged({
 $MainForm.Controls.Add($global:DeleteSavedAtStartCheckBox)
 
 # Keep Replays checkbox startille
-$global:KeepReplaysAtStartCheckBox = CreateCheckBox -text "Säästä Replat" -locx 380 -locy 140 -sizex 170 -sizey 20
+$global:KeepReplaysAtStartCheckBox = CreateCheckBox -text "Säästä Replat" -locx 380 -locy 150 -sizex 170 -sizey 20
 $global:KeepReplaysAtStartCheckBox.Checked = $true
 $global:KeepReplaysAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepReplaysAtStartCheckBox.Checked) {
@@ -450,7 +487,7 @@ $global:KeepReplaysAtStartCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepReplaysAtStartCheckBox)
 
 # Keep Observerpack checkbox startille
-$global:KeepObserverAtStartCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 380 -locy 160 -sizex 170 -sizey 20
+$global:KeepObserverAtStartCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 380 -locy 170 -sizex 170 -sizey 20
 $global:KeepObserverAtStartCheckBox.Checked = $true
 $global:KeepObserverAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepObserverAtStartCheckBox.Checked) {
@@ -462,7 +499,7 @@ $global:KeepObserverAtStartCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepObserverAtStartCheckBox)
 
 # Keep Crashes checkbox
-$global:KeepCrashesAtStartCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 380 -locy 180 -sizex 170 -sizey 20
+$global:KeepCrashesAtStartCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 380 -locy 190 -sizex 170 -sizey 20
 $global:KeepCrashesAtStartCheckBox.Checked = $true
 $global:KeepCrashesAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepCrashesAtStartCheckBox.Checked) {
@@ -474,7 +511,7 @@ $global:KeepCrashesAtStartCheckBox.add_CheckedChanged({
 $MainForm.Controls.Add($global:KeepCrashesAtStartCheckBox)
 
 # Muistutus boottia peli 3-4h crashin varalta
-$global:BootReminderCheckBox = CreateCheckBox -text "Muistutus Boottaa peli" -locx 360 -locy 55 -sizex 135 -sizey 20
+$global:BootReminderCheckBox = CreateCheckBox -text "Muistutus Boottaa peli" -locx 360 -locy 65 -sizex 135 -sizey 20
 $global:BootReminderCheckBox.Checked = $true
 $global:BootReminderCheckBox.Add_CheckStateChanged({
     $global:BootReminderSelect.Enabled = $global:BootReminderCheckBox.Checked
@@ -487,22 +524,22 @@ $global:BootReminderCheckBox.Add_CheckStateChanged({
 $MainForm.Controls.Add($global:BootReminderCheckBox)
 
 # Boot timer dropdown
-$global:BootReminderSelect = CreateDropDownMenu -locx 360 -locy 75 -sizex 30 -sizey 20
+$global:BootReminderSelect = CreateDropDownMenu -locx 360 -locy 85 -sizex 30 -sizey 20
 1..4 | ForEach-Object { $global:BootReminderSelect.Items.Add($_) } | Out-Null
 $global:BootReminderSelect.SelectedItem = 3
 $MainForm.Controls.Add($global:BootReminderSelect)
 
 # Boot timer label
-$BootReminderLabel = CreateLabel -text "Tuntia" -locx 390 -locy 79 -sizex 40 -sizey 15
+$BootReminderLabel = CreateLabel -text "Tuntia" -locx 390 -locy 89 -sizex 40 -sizey 15
 $MainForm.Controls.Add($BootReminderLabel)
 
 # Boot timer time left label
-$global:BootReminderTimeLeftLabel = CreateLabel -text "Time left: $global:CountDown" -locx 430 -locy 79 -sizex 150 -sizey 15
+$global:BootReminderTimeLeftLabel = CreateLabel -text "Time left: $global:CountDown" -locx 430 -locy 89 -sizex 150 -sizey 15
 $MainForm.Controls.Add($global:BootReminderTimeLeftLabel)
 
 
 #Launch PUBG button
-$LaunchButton = CreateButton -text "Start" -locx 340 -locy 15 -sizex 80 -sizey 20
+$LaunchButton = CreateButton -text "Start" -locx 340 -locy 25 -sizex 80 -sizey 20
 $LaunchButton.Add_Click({
     if ($global:DeleteMoviesAtStartCheckBox.Checked) {
         Delete-Movies -SkipConfirmation $true
@@ -521,7 +558,7 @@ $LaunchButton.Add_Click({
 $MainForm.Controls.Add($LaunchButton)
 
 #Kill PUBG button
-$KillButton = CreateButton -text "Kill" -locx 420 -locy 15 -sizex 80 -sizey 20
+$KillButton = CreateButton -text "Kill" -locx 420 -locy 25 -sizex 80 -sizey 20
 $KillButton.Add_Click({
     Kill-PUBG
     # Suljetaan timer, jos semmonen löytyy
@@ -534,7 +571,7 @@ $KillButton.Add_Click({
 $MainForm.Controls.Add($KillButton)
 
 #Restart PUBG button 
-$RestartButton = CreateButton -text "Restart" -locx 500 -locy 15 -sizex 80 -sizey 20
+$RestartButton = CreateButton -text "Restart" -locx 500 -locy 25 -sizex 80 -sizey 20
 $RestartButton.Add_Click({
     Kill-PUBG
     Start-Sleep -Seconds 1
