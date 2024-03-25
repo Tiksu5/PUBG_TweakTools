@@ -2,7 +2,7 @@
 #
 
 
-#### START ELEVATE TO ADMIN #####
+ #### START ELEVATE TO ADMIN #####
 param(
     [Parameter(Mandatory=$false)]
     [switch]$shouldAssumeToBeElevated,
@@ -29,13 +29,13 @@ if ((Test-Admin) -eq $false)  {
         Write-Output "Elevating did not work :("
 
     } else {
-        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-noprofile -file "{0}" -shouldAssumeToBeElevated -workingDirOverride "{1}"' -f ($myinvocation.MyCommand.Definition, "$workingDirOverride"))
+        Start-Process powershell.exe -Verb RunAs -ArgumentList ('-ep RemoteSigned -noprofile -file "{0}" -shouldAssumeToBeElevated -workingDirOverride "{1}"' -f ($myinvocation.MyCommand.Definition, "$workingDirOverride"))
     }
-    exit
+    break
 }
 
 Set-Location "$workingDirOverride"
-##### END ELEVATE TO ADMIN #####
+ #### END ELEVATE TO ADMIN #####
 
 
 # Assemblies
@@ -258,11 +258,11 @@ function CreateDropDownMenu {
     return $dropdown
 }
 # Hide Console
-[Console.Window]::ShowWindow($ConsolePtr, 0)
+ [Console.Window]::ShowWindow($ConsolePtr, 0)
 
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
-    Text = "Tiksu Tweak Tools v0.2"
+    Text = "Tiksu Tweak Tools v0.21"
     Size = New-Object Drawing.Size(600, 600)
     StartPosition = "CenterScreen"
     BackColor = $global:DefaultBackColor

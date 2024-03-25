@@ -9,6 +9,6 @@ $WScriptObj = New-Object -ComObject "WScript.Shell"
 $Shortcut = $WScriptObj.CreateShortcut($ShortcutPath)
 # Set the target path for the shortcut (including powershell.exe)
 $shortcut.TargetPath = "powershell.exe"
-$shortcut.Arguments = "-ep Bypass -NoProfile -File $SourceFileName"
+$shortcut.Arguments = "-ep RemoteSigned -NoProfile -File $SourceFileName"
 $shortcut.WorkingDirectory = $PSScriptRoot
 $Shortcut.Save()
