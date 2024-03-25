@@ -166,8 +166,10 @@ $global:KeywordsNotFound = @()
 function Set-ProgramPath {
     param([string]$NewPath)
     $global:ProgramPath = $NewPath
-    $global:MoviesFolderPath = "$global:ProgramPath\TslGame\Content\Movies"
-    $global:ExcludedFolderPath = "$global:ProgramPath\TslGame\Content\Movies\AtoZ"
+    if (Test-Path -Path $global:ProgramPath\TslGame\Content\Movies) {
+        $global:MoviesFolderPath = "$global:ProgramPath\TslGame\Content\Movies"
+        $global:ExcludedFolderPath = "$global:ProgramPath\TslGame\Content\Movies\AtoZ"
+    }
 }
 
 function CreateLabel {
