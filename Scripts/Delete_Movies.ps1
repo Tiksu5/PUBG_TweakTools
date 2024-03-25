@@ -55,41 +55,42 @@ function Delete-Movies {
         param (
         [bool]$SkipConfirmation = $false
     )
-    #Tarkistetaan onko peli päällä
-    if (-not (Get-Process -Name "TslGame" -ErrorAction SilentlyContinue)) {
-        # If SkipConfirmation is true, skip user confirmation & label update
-        if ($SkipConfirmation) {
-            # Check ennen poistoa
-            Check-Movies -SkipConfirmation $true
+    #Check onko peli päällä ja skip delete jos on
+    if ((Get-Process -Name "TslGame" -ErrorAction SilentlyContinue)) {
+        return
+    }
+    # If SkipConfirmation is true, skip user confirmation & label update
+    if ($SkipConfirmation) {
+        # Check ennen poistoa
+        Check-Movies -SkipConfirmation $true
 
-            # Delete jos leffat löydetty
-            if ($script:MoviesFound) {
+        # Delete jos leffat löydetty
+        if ($script:MoviesFound) {
+            foreach ($Item in $script:ItemsInMoviesFolder) {
+                if (-not $Item.FullName.StartsWith($global:ExcludedFolderPath)) {
+                    Remove-Item -Path $Item.FullName -Force -Recurse
+                }
+            }
+        }
+    } else {
+        # Check ennen poistoa
+        Check-Movies
+
+        # Varmistetaan poisto käyttäjältä
+        if ($script:MoviesFound) {
+            $confirmationResult = Confirm-Dialog
+            if ($confirmationResult -eq [Windows.Forms.DialogResult]::Yes) {
                 foreach ($Item in $script:ItemsInMoviesFolder) {
                     if (-not $Item.FullName.StartsWith($global:ExcludedFolderPath)) {
                         Remove-Item -Path $Item.FullName -Force -Recurse
                     }
-                }
-            }
-        } else {
-            # Check ennen poistoa
-            Check-Movies
-
-            # Varmistetaan poisto käyttäjältä
-            if ($script:MoviesFound) {
-                $confirmationResult = Confirm-Dialog
-                if ($confirmationResult -eq [Windows.Forms.DialogResult]::Yes) {
-                    foreach ($Item in $script:ItemsInMoviesFolder) {
-                        if (-not $Item.FullName.StartsWith($global:ExcludedFolderPath)) {
-                            Remove-Item -Path $Item.FullName -Force -Recurse
-                        }
-                    }   
-                    $global:DeleteMoviesDoneLabel.Text = "Leffat poistettu!"
-                    $global:DeleteMoviesDoneLabel.BackColor = [System.Drawing.Color]::Green
-                    $script:MoviesFound = $false
-                } else {
-                    $global:DeleteMoviesDoneLabel.Text = "Poisto keskeytetty"
-                    $global:DeleteMoviesDoneLabel.BackColor = [System.Drawing.Color]::Yellow
-                }
+                }   
+                $global:DeleteMoviesDoneLabel.Text = "Leffat poistettu!"
+                $global:DeleteMoviesDoneLabel.BackColor = [System.Drawing.Color]::Green
+                $script:MoviesFound = $false
+            } else {
+                $global:DeleteMoviesDoneLabel.Text = "Poisto keskeytetty"
+                $global:DeleteMoviesDoneLabel.BackColor = [System.Drawing.Color]::Yellow
             }
         }
     }
