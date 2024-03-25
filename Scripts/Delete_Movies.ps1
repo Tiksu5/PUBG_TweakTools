@@ -56,7 +56,7 @@ function Delete-Movies {
         [bool]$SkipConfirmation = $false
     )
     #Check onko peli päällä ja skip delete jos on
-    if ((Get-Process -Name "TslGame" -ErrorAction SilentlyContinue)) {
+    if (Get-Process -Name "TslGame" -ErrorAction SilentlyContinue) {
         return
     }
     # If SkipConfirmation is true, skip user confirmation & label update
