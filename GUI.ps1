@@ -264,7 +264,7 @@ function CreateDropDownMenu {
 
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
-    Text = "Tiksu Tweak Tools v0.21"
+    Text = "Tiksu Tweak Tools v0.22"
     Size = New-Object Drawing.Size(600, 600)
     StartPosition = "CenterScreen"
     BackColor = $global:DefaultBackColor
