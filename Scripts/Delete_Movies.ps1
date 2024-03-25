@@ -57,6 +57,7 @@ function Delete-Movies {
     )
     #Check onko peli päällä ja skip delete jos on
     if (Get-Process -Name "TslGame" -ErrorAction SilentlyContinue) {
+        Write-Host Peli on päällä, skipataan leffojen poisto
         return
     }
     # If SkipConfirmation is true, skip user confirmation & label update
