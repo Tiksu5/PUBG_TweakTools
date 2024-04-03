@@ -1,3 +1,8 @@
+Harrasteprojekti powershellin opiskelua varten.
+PUBG TOS:n vastainen.
+Käyttö omalla vastuulla.
+-----
+
 1. Pura mihi haluut
 2. Aja Luo Shortcut
 3. Siirrä TTT Shortcut mihi haluat
