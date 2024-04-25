@@ -29,6 +29,14 @@ function Clean-SavedFolder {
             if ($Item.FullName -eq $global:GameUserSettingsPath) {
                 continue
             }
+            # Ignore User Config Backupit etc.
+            if ($Item.FullName -like $global:WindowsNoEditorFolderPath + "\GameUserSettings*") {
+                continue
+            }
+            # Säästetään Engine.ini jos se on asetettu read-only
+            if ($Item.FullName -eq $global:WindowsNoEditorFolderPath + "\Engine.ini" -and ($Item.Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
+                continue
+            }
             # Ignore muut valitut kansiot
             if (-not $Item.PSIsContainer) {
                 foreach ($ExcludedFolderAtStart in $global:ExcludedFoldersAtStart) {
@@ -81,6 +89,14 @@ function Clean-SavedFolder {
             $exclude = $false
             # Ignore User Config
             if ($Item.FullName -eq $global:GameUserSettingsPath) {
+                continue
+            }
+            # Ignore User Config Backupit etc.
+            if ($Item.FullName -like $global:WindowsNoEditorFolderPath + "\GameUserSettings*") {
+                continue
+            }
+            # Säästetään Engine.ini jos se on asetettu read-only
+            if ($Item.FullName -eq $global:WindowsNoEditorFolderPath + "\Engine.ini" -and ($Item.Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
                 continue
             }
             # Ignore muut valitut kansiot

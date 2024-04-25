@@ -65,15 +65,19 @@ $global:CrashesFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Crashes"
 $global:ReplayFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Demos"
 $global:ObserverFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer"
 $global:SavedFolderPath = "$env:LOCALAPPDATA\TslGame\Saved"
+$global:WindowsNoEditorFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor"
+$global:CasterGamingFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer.gaming"
+$global:CasterObserverFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer.casting"
 $global:ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
 $global:DefaultSavedObserverPackLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "ObserverPacks"
 $global:DefaultSoundsLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "Sounds"
+
 $global:ToolTip = New-Object System.Windows.Forms.ToolTip
 $global:BootTimer = $null
 $ConsolePtr = [Console.Window]::GetConsoleWindow()
 $global:DefaultBackColor = [System.Drawing.Color]::White
-$global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath )
-$global:ExcludedFoldersAtStart = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath )
+$global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
+$global:ExcludedFoldersAtStart = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                         "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
@@ -167,8 +171,8 @@ function Set-ProgramPath {
     param([string]$NewPath)
     $global:ProgramPath = $NewPath
     if (Test-Path -Path $global:ProgramPath\TslGame\Content\Movies) {
-        $global:MoviesFolderPath = "$global:ProgramPath\TslGame\Content\Movies"
-        $global:ExcludedFolderPath = "$global:ProgramPath\TslGame\Content\Movies\AtoZ"
+        $global:MoviesFolderPath = $global:ProgramPath + "\TslGame\Content\Movies"
+        $global:ExcludedFolderPath = $global:ProgramPath + "\TslGame\Content\Movies\AtoZ"
     }
 }
 
