@@ -17,12 +17,12 @@ function Change-LogoPack {
         }
     }
     # Kopioi uus paketti tilalle
-    if ($global:ObserverPackSelectedItem -ne "Default") {
-        $script:FilesInSelectedObserverPack = Get-ChildItem -Path $global:ObserverPackSelectedItem -Force -Recurse
+    if ($global:ObserverPackSelect.SelectedItem -ne "Default") {
+        $script:FilesInSelectedObserverPack = Get-ChildItem -Path $global:ObserverPackSelect.SelectedItem -Force -Recurse
         foreach ($File in $script:FilesInSelectedObserverPack) {
             $FilesInsideDirectory = Get-ChildItem -Path $File.FullName
             foreach ($FileInsideDirectory in $FilesInsideDirectory) {
-                Copy-Item -Path $FileInsideDirectory.FullName -Destination $global:ObserverFolderPath -Force -Recurse 
+                Copy-Item -Path $FileInsideDirectory.FullName -Destination $global:ObserverFolderPath -Force -Recurse
             }
         }
     }
