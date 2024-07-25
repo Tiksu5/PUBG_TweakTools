@@ -11,7 +11,6 @@ function Clean-SavedFolder {
     if (Get-Process -Name "TslGame" -ErrorAction SilentlyContinue) {
         Write-Host Peli on päällä, skipataan Saved kansion tyhjennys
         return
-        
     }
     # If SkipConfirmation is true, skip user confirmation & label update
     if ($SkipConfirmation) {
@@ -35,6 +34,18 @@ function Clean-SavedFolder {
             }
             # Säästetään Engine.ini jos se on asetettu read-only
             if ($Item.FullName -eq $global:WindowsNoEditorFolderPath + "\Engine.ini" -and ($Item.Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
+                continue
+            }
+            # Säästetään Replat jos valittu launch settareista
+            if ($global:KeepReplaysAtStartCheckBox.Checked -and $Item.FullName -like "$global:ReplayFolderPath*")) {
+                continue
+             }
+             # Säästetään Logo pack jos valittu launch settareista
+            if ($global:KeepObserverAtStartCheckBox.Checked-and $Item.FullName -like "$global:ObserverFolderPath*")) {
+                continue
+            }
+            # Säästetään Crash reportit jos valittu launch settareista
+            if ($global:KeepCrashesAtStartCheckBox.Checked-and $Item.FullName -like "$global:CrashesFolderPath*")) {
                 continue
             }
             # Ignore muut valitut kansiot
@@ -97,6 +108,18 @@ function Clean-SavedFolder {
             }
             # Säästetään Engine.ini jos se on asetettu read-only
             if ($Item.FullName -eq $global:WindowsNoEditorFolderPath + "\Engine.ini" -and ($Item.Attributes -band [System.IO.FileAttributes]::ReadOnly)) {
+                continue
+            }
+            # Säästetään Crash reportit jos valittu main settareista
+            if ($global:KeepReplaysCheckBox.Checked -and $Item.FullName -like "$global:ReplayFolderPath*")) {
+                continue
+             }
+             # Säästetään Crash reportit jos valittu main settareista
+            if ($global:KeepObserverCheckBox.Checked-and $Item.FullName -like "$global:ObserverFolderPath*")) {
+                continue
+            }
+            # Säästetään Crash reportit jos valittu main settareista
+            if ($global:KeepCrashesCheckBox.Checked-and $Item.FullName -like "$global:CrashesFolderPath*")) {
                 continue
             }
             # Ignore muut valitut kansiot
