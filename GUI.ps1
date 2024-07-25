@@ -5,8 +5,8 @@
 #
 #
 #
-#
-# v0.3# Lisätty config filu user settingseille, pari nappia lisää, lisätty valinta kerralla disabloia kaikki launch settarit.
+#v0.31# Hotfix, parannettu säästettävien kansioiden logiikkaa, Saved kansion siivoamisessa.
+#v0.3## Lisätty config filu user settingseille, pari nappia lisää, lisätty valinta kerralla disabloia kaikki launch settarit.
 ####### Lisätty PsIni moduuli .ini tiedostojen lukemista ja muokkaamista varten.
 #############################################################################################################################
 
@@ -85,8 +85,7 @@ $global:DefaultSoundsLocation = Join-Path -Path $global:ScriptDirectory -ChildPa
 $global:ToolTip = New-Object System.Windows.Forms.ToolTip
 $global:BootTimer = $null
 $global:DefaultBackColor = [System.Drawing.Color]::White
-$global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
-$global:ExcludedFoldersAtStart = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
+$global:ExcludedFolders = @( $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
 $global:Keywords = @( "sg.ResolutionQuality=", "ScreenScale=", "InGameCustomFrameRateLimit=", "MasterSoundVolume=", "EffectSoundVolume=",
                         "EmoteSoundVolume=", "UISoundVolume=", "BGMSoundVolume=", "PlaygroundBGMSoundVolume=", "PlaygroundWebSoundVolume=",
                         "FpsCameraFov=", "Gamma=", '"Baltic_Main", ', '"Desert_Main", ', '"Savage_Main", ', '"DihorOtok_Main", ',
@@ -404,11 +403,6 @@ if ($global:cfgMainKeepReplays -is [bool]) {
     $global:KeepReplaysCheckBox.Checked = $false
 }
 $global:KeepReplaysCheckBox.add_CheckedChanged({ 
-    if ($global:KeepReplaysCheckBox.Checked) {
-        $global:ExcludedFolders += $global:ReplayFolderPath
-    } else {
-        $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ReplayFolderPath
-    }
     $global:cfgMainKeepReplays = $global:KeepReplaysCheckBox.Checked
     $global:Config.Main.KeepReplays = $global:cfgMainKeepReplays
     if ($global:AutoSaveMenuItem.Checked) {
@@ -425,11 +419,6 @@ if ($global:cfgMainKeepObserver -is [bool]) {
     $global:KeepObserverCheckBox.Checked = $false
 }
 $global:KeepObserverCheckBox.add_CheckedChanged({
-    if ($global:KeepObserverCheckBox.Checked) {
-        $global:ExcludedFolders += $global:ObserverFolderPath
-    } else {
-        $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ObserverFolderPath
-    }
     $global:cfgMainKeepObserver = $global:KeepObserverCheckBox.Checked
     $global:Config.Main.KeepObserver = $global:cfgMainKeepObserver
     if ($global:AutoSaveMenuItem.Checked) {
@@ -446,11 +435,6 @@ if ($global:cfgMainKeepCrash -is [bool]) {
     $global:cfgMainKeepCrash.Checked = $false 
 }
 $global:KeepCrashesCheckBox.add_CheckedChanged({
-    if ($global:KeepCrashesCheckBox.Checked) {
-        $global:ExcludedFolders += $global:CrashesFolderPath
-    } else {
-        $global:ExcludedFolders = $global:ExcludedFolders -ne $global:CrashesFolderPath
-        }
     $global:cfgMainKeepCrash = $global:KeepCrashesCheckBox.Checked
     $global:Config.Main.KeepCrash = $global:cfgMainKeepCrash
     if ($global:AutoSaveMenuItem.Checked) {
@@ -671,11 +655,6 @@ if ($global:cfgLaunchKeepReplays -is [bool]) {
     $global:KeepReplaysAtStartCheckBox.Checked = $false
 }
 $global:KeepReplaysAtStartCheckBox.add_CheckedChanged({
-    if ($global:KeepReplaysAtStartCheckBox.Checked) {
-        $global:ExcludedFoldersAtStart += $global:ReplayFolderPath
-    } else {
-        $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:ReplayFolderPath
-    }
     $global:cfgLaunchKeepReplays = $global:KeepReplaysAtStartCheckBox.Checked
     $global:Config.Launch.KeepReplays = $global:cfgLaunchKeepReplays
     if ($global:AutoSaveMenuItem.Checked) {
@@ -692,11 +671,6 @@ if ($global:cfgLaunchKeepObserver -is [bool]) {
     $global:KeepObserverAtStartCheckBox.Checked = $false
 }
 $global:KeepObserverAtStartCheckBox.add_CheckedChanged({
-    if ($global:KeepObserverAtStartCheckBox.Checked) {
-        $global:ExcludedFoldersAtStart += $global:ObserverFolderPath
-    } else {
-        $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:ObserverFolderPath
-        }
     $global:cfgLaunchKeepObserver = $global:KeepObserverAtStartCheckBox.Checked
     $global:Config.Launch.KeepObserver = $global:cfgLaunchKeepObserver
     if ($global:AutoSaveMenuItem.Checked) {
@@ -713,11 +687,6 @@ if ($global:cfgLaunchKeepCrash -is [bool]) {
     $global:KeepCrashesAtStartCheckBox.Checked = $false
 }
 $global:KeepCrashesAtStartCheckBox.add_CheckedChanged({
-    if ($global:KeepCrashesAtStartCheckBox.Checked) {
-        $global:ExcludedFoldersAtStart += $global:CrashesFolderPath
-    } else {
-        $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:CrashesFolderPath
-    }
     $global:cfgLaunchKeepCrash = $global:KeepCrashesAtStartCheckBox.Checked
     $global:Config.Launch.KeepCrash = $global:cfgLaunchKeepCrash
     if ($global:AutoSaveMenuItem.Checked) {
