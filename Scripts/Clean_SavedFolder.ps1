@@ -50,8 +50,8 @@ function Clean-SavedFolder {
             }
             # Ignore muut valitut kansiot
             if (-not $Item.PSIsContainer) {
-                foreach ($ExcludedFolderAtStart in $global:ExcludedFoldersAtStart) {
-                    if ($Item.FullName -like "$ExcludedFolderAtStart*") {
+                foreach ($ExcludedFolder in $global:ExcludedFolders) {
+                    if ($Item.FullName -like "$ExcludedFolder*") {
                         $exclude = $true
                         break             
                     }
