@@ -1,6 +1,14 @@
 ﻿#
 #
-
+#
+#
+#
+#
+#
+#
+# v0.3# Lisätty config filu user settingseille, pari nappia lisää, lisätty valinta kerralla disabloia kaikki launch settarit.
+####### Lisätty PsIni moduuli .ini tiedostojen lukemista ja muokkaamista varten.
+#############################################################################################################################
 
  #### START ELEVATE TO ADMIN #####
 param(
@@ -12,7 +20,7 @@ param(
 )
 
 # If parameter is not set, we are propably in non-admin execution. We set it to the current working directory so that
-#  the working directory of the elevated execution of this script is the current working directory
+# the working directory of the elevated execution of this script is the current working directory
 if(-not($PSBoundParameters.ContainsKey('workingDirOverride')))
 {
     $workingDirOverride = (Get-Location).Path
@@ -27,7 +35,6 @@ function Test-Admin {
 if ((Test-Admin) -eq $false)  {
     if ($shouldAssumeToBeElevated) {
         Write-Output "Elevating did not work :("
-
     } else {
         Start-Process powershell.exe -Verb RunAs -ArgumentList ('-ep RemoteSigned -noprofile -file "{0}" -shouldAssumeToBeElevated -workingDirOverride "{1}"' -f ($myinvocation.MyCommand.Definition, "$workingDirOverride"))
     }
@@ -37,15 +44,7 @@ if ((Test-Admin) -eq $false)  {
 Set-Location "$workingDirOverride"
  #### END ELEVATE TO ADMIN #####
 
-
-# Assemblies
-Add-Type -AssemblyName System.Windows.Forms
-Add-Type -AssemblyName System.Drawing
-Add-Type -AssemblyName WindowsFormsIntegration
-Add-Type -AssemblyName PresentationFramework
-Add-Type -AssemblyName WindowsBase
-Add-Type -AssemblyName PresentationCore
-# .Net methods for hiding/showing the console in the background
+ # .Net methods for hiding/showing the console in the background
 Add-Type -Name Window -Namespace Console -MemberDefinition '
 [DllImport("Kernel32.dll")]
 public static extern IntPtr GetConsoleWindow();
@@ -54,12 +53,23 @@ public static extern IntPtr GetConsoleWindow();
 public static extern bool ShowWindow(IntPtr hWnd, Int32 nCmdShow);
 '
 
+# Hide Console
+$ConsolePtr = [Console.Window]::GetConsoleWindow()
+[Console.Window]::ShowWindow($ConsolePtr, 0) | out-null
 
-[System.Windows.Forms.Application]::EnableVisualStyles();
+# Assemblies
+Add-Type -AssemblyName System.Windows.Forms
+Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName WindowsFormsIntegration
+Add-Type -AssemblyName PresentationFramework
+Add-Type -AssemblyName WindowsBase
+Add-Type -AssemblyName PresentationCore
+
+# Modules
+Import-Module $PSScriptRoot\Modules\PsIni\3.1.3\PsIni.psm1
 
 # Variables
 $global:ProgramName = "PUBG: BATTLEGROUNDS"
-$global:ProgramPath = "null"
 $global:GameUserSettingsPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\WindowsNoEditor\GameUserSettings.ini"
 $global:CrashesFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Crashes"
 $global:ReplayFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Demos"
@@ -69,12 +79,11 @@ $global:WindowsNoEditorFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Config\Wind
 $global:CasterGamingFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer.gaming"
 $global:CasterObserverFolderPath = "$env:LOCALAPPDATA\TslGame\Saved\Observer.casting"
 $global:ScriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Definition
+$global:ConfigPath = "$PSScriptRoot\Config.ini"
 $global:DefaultSavedObserverPackLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "ObserverPacks"
 $global:DefaultSoundsLocation = Join-Path -Path $global:ScriptDirectory -ChildPath "Sounds"
-
 $global:ToolTip = New-Object System.Windows.Forms.ToolTip
 $global:BootTimer = $null
-$ConsolePtr = [Console.Window]::GetConsoleWindow()
 $global:DefaultBackColor = [System.Drawing.Color]::White
 $global:ExcludedFolders = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
 $global:ExcludedFoldersAtStart = @( $global:ReplayFolderPath, $global:ObserverFolderPath, $global:CrashesFolderPath, $global:CasterObserverFolderPath, $global:CasterGamingFolderPath )
@@ -154,7 +163,6 @@ $global:KeywordsNotFound = @()
         }
         #>
 
-
 # Scripts
 . "$PSScriptRoot\Scripts\Find_Path.ps1"
 . "$PSScriptRoot\Scripts\Delete_Movies.ps1"
@@ -165,17 +173,12 @@ $global:KeywordsNotFound = @()
 . "$PSScriptRoot\Scripts\Change_LogoPack.ps1"
 . "$PSScriptRoot\Scripts\Kill_Pubg.ps1"
 . "$PSScriptRoot\Scripts\Boot_Timer.ps1"
+. "$PSScriptRoot\Scripts\Get_Config.ps1"
+
+# Get Config arvot
+Get-Config
 
 # Functions
-function Set-ProgramPath {
-    param([string]$NewPath)
-    $global:ProgramPath = $NewPath
-    if (Test-Path -Path $global:ProgramPath\TslGame\Content\Movies) {
-        $global:MoviesFolderPath = $global:ProgramPath + "\TslGame\Content\Movies"
-        $global:ExcludedFolderPath = $global:ProgramPath + "\TslGame\Content\Movies\AtoZ"
-    }
-}
-
 function CreateLabel {
     param (
         [string]$text,
@@ -263,12 +266,12 @@ function CreateDropDownMenu {
 
     return $dropdown
 }
-# Hide Console
- [Console.Window]::ShowWindow($ConsolePtr, 0)
+
+[System.Windows.Forms.Application]::EnableVisualStyles();
 
 # Form
 $MainForm = New-Object Windows.Forms.Form -Property @{
-    Text = "Tiksu Tweak Tools v0.22"
+    Text = "Tiksu Tweak Tools v0.3"
     Size = New-Object Drawing.Size(600, 600)
     StartPosition = "CenterScreen"
     BackColor = $global:DefaultBackColor
@@ -281,11 +284,53 @@ $MainForm.Controls.Add($MenuStrip)
 $FileMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
 $FileMenuItem.Text = "&File"
 
- # ShowConsole menu nappi
-$ShowConsoleMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
-$ShowConsoleMenuItem.Text = "&Show Console"
-$ShowConsoleMenuItem.Add_Click({
-    [Console.Window]::ShowWindow($ConsolePtr, 4)
+ # HideConsole menu nappi
+$HideConsoleMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$HideConsoleMenuItem.Text = "Hide Console"
+if ($global:cfgMainHideConsole -is [bool]) { 
+    $HideConsoleMenuItem.Checked = $global:cfgMainHideConsole
+} else { 
+    $HideConsoleMenuItem.Checked = $true
+}
+if ($HideConsoleMenuItem.Checked) {
+    [Console.Window]::ShowWindow($ConsolePtr, 0) | Out-Null
+} else {
+    [Console.Window]::ShowWindow($ConsolePtr, 4) | Out-Null
+}
+
+$HideConsoleMenuItem.Add_Click({
+    if ($HideConsoleMenuItem.Checked) {
+        [Console.Window]::ShowWindow($ConsolePtr, 4) 
+        $HideConsoleMenuItem.Checked = $false
+    } else {
+        [Console.Window]::ShowWindow($ConsolePtr, 0) 
+        $HideConsoleMenuItem.Checked = $true
+    }
+    $global:cfgMainHideConsole = $HideConsoleMenuItem.Checked
+    $global:Config.Main.HideConsole = $global:cfgMainHideConsole
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+
+ # AutoSave menu nappi
+$AutoSaveMenuItem = New-Object System.Windows.Forms.ToolStripMenuItem
+$AutoSaveMenuItem.Text = "Autosave"
+if ($global:cfgMainRememberSettings -is [bool]) { 
+    $AutoSaveMenuItem.Checked = $global:cfgMainRememberSettings
+} else { 
+    $AutoSaveMenuItem.Checked = $true
+}
+
+$AutoSaveMenuItem.Add_Click({
+    if ($AutoSaveMenuItem.Checked) {
+        $AutoSaveMenuItem.Checked = $false
+    } else {
+        $AutoSaveMenuItem.Checked = $true
+    }
+    $global:cfgMainRememberSettings = $AutoSaveMenuItem.Checked
+    $global:Config.Main.RememberSettings = $global:cfgMainRememberSettings
+    $global:Config | Out-IniFile -Force "Config.ini"   
 })
 
 # Exit menu nappi
@@ -294,9 +339,11 @@ $ExitMenuItem.Text = "&Exit"
 $ExitMenuItem.Add_Click({
     $MainForm.Close()
 })
-
-$FileMenuItem.DropDownItems.AddRange(@($ShowConsoleMenuItem, $ExitMenuItem))
+$FileMenuItem.DropDownItems.AddRange(@($AutoSaveMenuItem, $HideConsoleMenuItem, $ExitMenuItem))
 $MenuStrip.Items.Add($FileMenuItem) | Out-Null
+
+
+$MainForm.Add_Shown({$MainForm.Activate()}) | Out-Null
 
 # Path_Label
 $global:MainPathLabel = CreateLabel -text "Asennuspolku:" -locx 20 -locy 25 -sizex 320 -sizey 25
@@ -312,11 +359,20 @@ $ChangePathButton.Add_Click({
     # Testaa Path
     if (-not (Test-Path -Path $global:ChangePathTextBox.Text -PathType Container)) {
         [System.Windows.Forms.MessageBox]::Show("Polkua ei löydy: $($global:ChangePathTextBox.Text) ") 
-        return
+    return
     }
-    Set-ProgramPath -NewPath $global:ChangePathTextBox.Text
-    $global:MainPathLabel.Text = "Asennuspolku löydetty: $global:ProgramPath"
-    $global:MainPathLabel.BackColor = [System.Drawing.Color]::Green
+    $EngineTestPath = $global:ChangePathTextBox.Text + "\Engine"
+    $TslGameTestPath = $global:ChangePathTextBox.Text + "\TslGame"
+    if ((Test-Path -Path $EngineTestPath) -and (Test-Path -Path $TslGameTestPath)) {
+        Set-ProgramPath -NewPath $global:ChangePathTextBox.Text
+        $global:MainPathLabel.Text = "Asennuspolku löydetty: $global:ProgramPath"
+        $global:MainPathLabel.BackColor = [System.Drawing.Color]::Green
+        $global:Config.Main.PubgPath = "$global:ProgramPath"
+        $global:ProgramPathFound = $true
+        
+    } else {
+        [System.Windows.Forms.MessageBox]::Show("$($global:ChangePathTextBox.Text) Ei ole PUBG asennus kansio") 
+    }
 })
 $MainForm.Controls.Add($ChangePathButton)
 
@@ -342,36 +398,63 @@ $MainForm.Controls.Add($DeleteSavedFolderLabel)
 
 # Keep Replays checkbox
 $global:KeepReplaysCheckBox = CreateCheckBox -text "Säästä Replat" -locx 10 -locy 160 -sizex 150 -sizey 20
-$global:KeepReplaysCheckBox.Checked = $false
-$global:KeepReplaysCheckBox.add_CheckedChanged({
+if ($global:cfgMainKeepReplays -is [bool]) {
+    $global:KeepReplaysCheckBox.Checked = $global:cfgMainKeepReplays
+} else { 
+    $global:KeepReplaysCheckBox.Checked = $false
+}
+$global:KeepReplaysCheckBox.add_CheckedChanged({ 
     if ($global:KeepReplaysCheckBox.Checked) {
         $global:ExcludedFolders += $global:ReplayFolderPath
     } else {
         $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ReplayFolderPath
+    }
+    $global:cfgMainKeepReplays = $global:KeepReplaysCheckBox.Checked
+    $global:Config.Main.KeepReplays = $global:cfgMainKeepReplays
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
     }
 })
 $MainForm.Controls.Add($global:KeepReplaysCheckBox)
 
 # Keep Observerpack checkbox
 $global:KeepObserverCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 10 -locy 180 -sizex 150 -sizey 20
-$global:KeepObserverCheckBox.Checked = $false
+if ($global:cfgMainKeepObserver -is [bool]) {
+    $global:KeepObserverCheckBox.Checked = $global:cfgMainKeepObserver
+} else { 
+    $global:KeepObserverCheckBox.Checked = $false
+}
 $global:KeepObserverCheckBox.add_CheckedChanged({
     if ($global:KeepObserverCheckBox.Checked) {
         $global:ExcludedFolders += $global:ObserverFolderPath
     } else {
         $global:ExcludedFolders = $global:ExcludedFolders -ne $global:ObserverFolderPath
     }
+    $global:cfgMainKeepObserver = $global:KeepObserverCheckBox.Checked
+    $global:Config.Main.KeepObserver = $global:cfgMainKeepObserver
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
 })
 $MainForm.Controls.Add($global:KeepObserverCheckBox)
 
 # Keep Crashes checkbox
 $global:KeepCrashesCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 160 -locy 160 -sizex 150 -sizey 20
-$global:KeepCrashesCheckBox.Checked = $false
+if ($global:cfgMainKeepCrash -is [bool]) {
+    $global:KeepCrashesCheckBox.Checked = $global:cfgMainKeepCrash
+} else { 
+    $global:cfgMainKeepCrash.Checked = $false 
+}
 $global:KeepCrashesCheckBox.add_CheckedChanged({
     if ($global:KeepCrashesCheckBox.Checked) {
         $global:ExcludedFolders += $global:CrashesFolderPath
     } else {
         $global:ExcludedFolders = $global:ExcludedFolders -ne $global:CrashesFolderPath
+        }
+    $global:cfgMainKeepCrash = $global:KeepCrashesCheckBox.Checked
+    $global:Config.Main.KeepCrash = $global:cfgMainKeepCrash
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
     }
 })
 $MainForm.Controls.Add($global:KeepCrashesCheckBox)
@@ -388,7 +471,7 @@ $DeleteSavedFolderButton.Add_Click({
 $MainForm.Controls.Add($DeleteSavedFolderButton)
 
 # Hae config arvot text (GameUserSettings.ini)
-$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 230 -sizex 350 -sizey 30
+$GetConfigValuesLabel = CreateLabel -text "Hakee GameUserSettings.inistä desimaali arvot, jotka voi bugaa/aiheuttaa stutteria enginessä" -locx 20 -locy 230 -sizex 300 -sizey 30
 $MainForm.Controls.Add($GetConfigValuesLabel)
 
 # Desimaalicheck text
@@ -410,14 +493,17 @@ $GetConfigValuesButton.Add_Click({
 $Form.Controls.Add($GetConfigValuesButton)
 #>
 
-# FindPath/GetValues @start
-Find-PUBGPath
-Check-Movies
+# GetPath at start
+Get-ProgramPath
+if ($global:MoviesPathFound = $true) {
+    Check-Movies
+}
 GetValues-GameUserSettings
 
 # Muuta GameUserSettings.ini arvot button
-$ChangeConfigValuesButton = CreateButton -text "Katso arvot" -locx 20 -locy 280 -sizex 80 -sizey 20
+$ChangeConfigValuesButton = CreateButton -text "Katso arvot" -locx 20 -locy 260 -sizex 80 -sizey 20
 $ChangeConfigValuesButton.Add_Click({
+    GetValues-GameUserSettings
     ChangeValues-GameUserSettings
 })
 $MainForm.Controls.Add($ChangeConfigValuesButton)
@@ -429,6 +515,8 @@ $MainForm.Controls.Add($ObserverPackLabel)
 # Test löytyykö Logopakettien kansio, tekee jos ei löydy
 if (-not (Test-Path -Path $DefaultSavedObserverPackLocation -PathType Container)) {
     New-Item -Path $DefaultSavedObserverPackLocation -ItemType Directory
+    $global:cfgLaunchObserverPackSelect = "Default"
+    $global:Config.Launch.ObserverPackSelect = $global:cfgLaunchObserverPackSelect
 }
 
 # Logopaketti dropdown
@@ -438,16 +526,44 @@ $global:ObserverPackSelect = CreateDropDownMenu -locx 415 -locy 510 -sizex 150 -
 $global:SelectionFolders = Get-ChildItem -Path $global:DefaultSavedObserverPackLocation -Directory | Select-Object -ExpandProperty Name
 $global:ObserverPackSelect.Items.AddRange($global:SelectionFolders)
 $global:ObserverPackSelect.Items.Add("Default") | Out-Null
-$global:ObserverPackSelect.SelectedItem = "Default"
+$global:ObserverPackSelect.SelectedItem = $global:cfgLaunchObserverPackSelect
+$global:ObserverPackSelect.add_SelectedIndexChanged({
+    $global:cfgLaunchObserverPackSelect = $global:ObserverPackSelect.SelectedItem
+    $global:Config.Launch.ObserverPackSelect = $global:cfgLaunchObserverPackSelect
+    if ($global:AutoSaveMenuItem.Checked) {
+       $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+
 $MainForm.Controls.Add($global:ObserverPackSelect)
 
 # Logopaketti vaihto button
-$ChangeObserverPackButton = CreateButton -text "Vaihda" -locx 410 -locy 530 -sizex 80 -sizey 20
+$ChangeObserverPackButton = CreateButton -text "Vaiha nyt" -locx 410 -locy 530 -sizex 80 -sizey 20
 $ChangeObserverPackButton.Add_Click({
-    $global:ObserverPackSelectedItem = $global:ObserverPackSelect.SelectedItem
-    Change-LogoPack
+    Change-LogoPack{
+    $global:cfgLaunchObserverPackSelect = $global:ObserverPackSelect.SelectedItem
+    $global:Config.Launch.ObserverPackSelect = $global:cfgLaunchObserverPackSelect
+    $global:Config | Out-IniFile -Force "Config.ini"
+    }
 })
 $MainForm.Controls.Add($ChangeObserverPackButton)
+
+# logopaketin vaihto checkbox starttiin
+$global:ChangeObserverPackAtStartCheckBox = CreateCheckBox -text "Vaiha logopaketti" -locx 360 -locy 110 -sizex 130 -sizey 20
+if ($global:cfgLaunchChangeLogo -is [bool]) { 
+    $global:ChangeObserverPackAtStartCheckBox.Checked = $global:cfgLaunchChangeLogo
+} else { 
+   $global:ChangeObserverPackAtStartCheckBox.Checked = $false
+} 
+$global:ChangeObserverPackAtStartCheckBox.add_CheckedChanged({
+    $global:cfgLaunchChangeLogo = $global:ChangeObserverPackAtStartCheckBox.Checked 
+    $global:Config.Launch.ChangeLogo = $global:cfgLaunchChangeLogo
+    if ($global:AutoSaveMenuItem.Checked) {
+       $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+$MainForm.Controls.Add($global:ChangeObserverPackAtStartCheckBox)
+
 <# # Disabled work in progress
  Logopaketti new button
  $CreateObserverPackButton = CreateButton -text "Luo Uusi" -locx 490 -locy 530 -sizex 80 -sizey 20
@@ -458,146 +574,365 @@ $MainForm.Controls.Add($CreateObserverPackButton)
 #>
 
 # Launch Settings Label
-$LaunchSettingsLabel = CreateLabel -text "Käynnistys asetukset" -locx 360 -locy 50 -sizex 300 -sizey 15
+$LaunchSettingsLabel = CreateLabel -text "Do on Launch" -locx 360 -locy 50 -sizex 300 -sizey 15
 $MainForm.Controls.Add($LaunchSettingsLabel)
 
+# Launch Settings Checkbox
+$global:EnableLaunchSettingsCheckBox = CreateCheckBox -text "Enable Launch Settings" -locx 360 -locy 70 -sizex 150 -sizey 20
+if ($global:cfgLaunchEnableSettings -is [bool]) { 
+    $global:EnableLaunchSettingsCheckBox.Checked = $global:cfgLaunchEnableSettings
+} else { 
+    $global:EnableLaunchSettingsCheckBox.Checked = $false
+} 
+$global:EnableLaunchSettingsCheckBox.add_CheckedChanged({
+    $global:DeleteSavedAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KillExtraProcessCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:BootReminderCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KillDuplicateTslGameCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KillPUBGLauncherCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KillBELauncherCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:BootReminderSelect.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:BootReminderLabel.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:BootReminderTimeLeftLabel.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KeepReplaysAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KeepObserverAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:KeepCrashesAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:DeleteMoviesAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+    $global:ChangeObserverPackAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+
+    $global:cfgLaunchEnableSettings = $global:EnableLaunchSettingsCheckBox.Checked 
+    $global:Config.Launch.EnableSettings = $global:cfgLaunchEnableSettings
+    if ($global:AutoSaveMenuItem.Checked) {
+       $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+$MainForm.Controls.Add($global:EnableLaunchSettingsCheckBox)
+
+
 # Poista leffat checkbox startille
-$global:DeleteMoviesAtStartCheckBox = CreateCheckBox -text "Poista Leffat" -locx 360 -locy 110 -sizex 130 -sizey 20
-$global:DeleteMoviesAtStartCheckBox.Checked = $true
+$global:DeleteMoviesAtStartCheckBox = CreateCheckBox -text "Poista Leffat" -locx 360 -locy 90 -sizex 130 -sizey 20
+if ($global:cfgLaunchDeleteMovies -is [bool]) { 
+    $global:DeleteMoviesAtStartCheckBox.Checked = $global:cfgLaunchDeleteMovies
+} else { 
+    $global:DeleteMoviesAtStartCheckBox.Checked = $false
+} 
+$global:DeleteMoviesAtStartCheckBox.add_CheckedChanged({
+    $global:cfgLaunchDeleteMovies = $global:DeleteMoviesAtStartCheckBox.Checked 
+    $global:Config.Launch.DeleteMovies = $global:cfgLaunchDeleteMovies
+    if ($global:AutoSaveMenuItem.Checked) {
+       $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
 $MainForm.Controls.Add($global:DeleteMoviesAtStartCheckBox)
 
 # Tyhjennä saved folder checkbox startille
 $global:DeleteSavedAtStartCheckBox = CreateCheckBox -text "Tyhjennä Saved Folder" -locx 360 -locy 130 -sizex 170 -sizey 20
-$global:DeleteSavedAtStartCheckBox.Checked = $true
+if ($global:cfgLaunchDeleteMovies -is [bool]) { 
+    $global:DeleteSavedAtStartCheckBox.Checked = $global:cfgLaunchDeleteSaved
+} else { 
+    $global:DeleteSavedAtStartCheckBox.Checked = $false
+}
+
 # Lisävalintojen Visibility
-$global:DeleteSavedAtStartCheckBox.Add_CheckStateChanged({
+$global:DeleteSavedAtStartCheckBox.add_CheckedChanged({
     $global:KeepReplaysAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
     $global:KeepObserverAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
     $global:KeepCrashesAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
     $global:KeepReplaysAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
     $global:KeepObserverAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
     $global:KeepCrashesAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
+    # Siirretään alempia checkboxeja valinnan mukaan
+    if ($global:DeleteSavedAtStartCheckBox.Checked) {
+        $global:KillExtraProcessCheckBox.Location = New-Object System.Drawing.Point (360, 210)
+        $global:KillDuplicateTslGameCheckBox.Location = New-Object System.Drawing.Point(380, 230)
+        $global:KillPUBGLauncherCheckBox.Location = New-Object System.Drawing.Point(380, 250)
+        $global:KillBELauncherCheckBox.Location = New-Object System.Drawing.Point(380, 270)
+    } else {
+        $global:KillExtraProcessCheckBox.Location = New-Object System.Drawing.Point(360, 150)
+        $global:KillDuplicateTslGameCheckBox.Location = New-Object System.Drawing.Point(380, 170)
+        $global:KillPUBGLauncherCheckBox.Location = New-Object System.Drawing.Point(380, 190)
+        $global:KillBELauncherCheckBox.Location = New-Object System.Drawing.Point(380, 210)
+    }
+    $global:cfgLaunchDeleteSaved = $global:DeleteSavedAtStartCheckBox.Checked
+    $global:Config.Launch.DeleteSaved = $global:cfgLaunchDeleteSaved
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
 })
+
+
 $MainForm.Controls.Add($global:DeleteSavedAtStartCheckBox)
 
 # Keep Replays checkbox startille
 $global:KeepReplaysAtStartCheckBox = CreateCheckBox -text "Säästä Replat" -locx 380 -locy 150 -sizex 170 -sizey 20
-$global:KeepReplaysAtStartCheckBox.Checked = $true
+if ($global:cfgLaunchKeepReplays -is [bool]) { 
+    $global:KeepReplaysAtStartCheckBox.Checked = $global:cfgLaunchKeepReplays
+} else { 
+    $global:KeepReplaysAtStartCheckBox.Checked = $false
+}
 $global:KeepReplaysAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepReplaysAtStartCheckBox.Checked) {
         $global:ExcludedFoldersAtStart += $global:ReplayFolderPath
     } else {
         $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:ReplayFolderPath
     }
+    $global:cfgLaunchKeepReplays = $global:KeepReplaysAtStartCheckBox.Checked
+    $global:Config.Launch.KeepReplays = $global:cfgLaunchKeepReplays
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
 })
 $MainForm.Controls.Add($global:KeepReplaysAtStartCheckBox)
 
 # Keep Observerpack checkbox startille
-$global:KeepObserverAtStartCheckBox = CreateCheckBox -text "Säästä Observerpaketti" -locx 380 -locy 170 -sizex 170 -sizey 20
-$global:KeepObserverAtStartCheckBox.Checked = $true
+$global:KeepObserverAtStartCheckBox = CreateCheckBox -text "Säästä Logopaketti" -locx 380 -locy 170 -sizex 170 -sizey 20
+if ($global:cfgLaunchKeepObserver -is [bool]) {
+    $global:KeepObserverAtStartCheckBox.Checked = $global:cfgLaunchKeepObserver
+} else {
+    $global:KeepObserverAtStartCheckBox.Checked = $false
+}
 $global:KeepObserverAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepObserverAtStartCheckBox.Checked) {
         $global:ExcludedFoldersAtStart += $global:ObserverFolderPath
     } else {
         $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:ObserverFolderPath
+        }
+    $global:cfgLaunchKeepObserver = $global:KeepObserverAtStartCheckBox.Checked
+    $global:Config.Launch.KeepObserver = $global:cfgLaunchKeepObserver
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
     }
 })
 $MainForm.Controls.Add($global:KeepObserverAtStartCheckBox)
 
 # Keep Crashes checkbox
 $global:KeepCrashesAtStartCheckBox = CreateCheckBox -text "Säästä Crash reportit" -locx 380 -locy 190 -sizex 170 -sizey 20
-$global:KeepCrashesAtStartCheckBox.Checked = $true
+if ($global:cfgLaunchKeepCrash -is [bool]) {
+    $global:KeepCrashesAtStartCheckBox.Checked = $global:cfgLaunchKeepCrash
+} else {
+    $global:KeepCrashesAtStartCheckBox.Checked = $false
+}
 $global:KeepCrashesAtStartCheckBox.add_CheckedChanged({
     if ($global:KeepCrashesAtStartCheckBox.Checked) {
         $global:ExcludedFoldersAtStart += $global:CrashesFolderPath
     } else {
         $global:ExcludedFoldersAtStart = $global:ExcludedFoldersAtStart -ne $global:CrashesFolderPath
     }
+    $global:cfgLaunchKeepCrash = $global:KeepCrashesAtStartCheckBox.Checked
+    $global:Config.Launch.KeepCrash = $global:cfgLaunchKeepCrash
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }   
 })
 $MainForm.Controls.Add($global:KeepCrashesAtStartCheckBox)
 
+
 # Muistutus boottia peli 3-4h crashin varalta
-$global:BootReminderCheckBox = CreateCheckBox -text "Muistutus Boottaa peli" -locx 360 -locy 65 -sizex 135 -sizey 20
-$global:BootReminderCheckBox.Checked = $true
-$global:BootReminderCheckBox.Add_CheckStateChanged({
+$global:BootReminderCheckBox = CreateCheckBox -text "Muistutus Boottaa peli" -locx 360 -locy 290 -sizex 135 -sizey 20
+if ($global:cfgLaunchBootReminder -is [bool]) {
+    $global:BootReminderCheckBox.Checked = $global:cfgLaunchBootReminder
+} else {
+$global:BootReminderCheckBox.Checked = $false
+}
+$global:BootReminderCheckBox.add_CheckedChanged({
     $global:BootReminderSelect.Enabled = $global:BootReminderCheckBox.Checked
     $global:BootReminderSelect.Visible = $global:BootReminderCheckBox.Checked
     $global:BootReminderLabel.Enabled = $global:BootReminderCheckBox.Checked
     $global:BootReminderLabel.Visible = $global:BootReminderCheckBox.Checked
     $global:BootReminderTimeLeftLabel.Enabled = $global:BootReminderCheckBox.Checked
     $global:BootReminderTimeLeftLabel.Visible = $global:BootReminderCheckBox.Checked
+    $global:cfgLaunchBootReminder = $global:BootReminderCheckBox.Checked
+    $global:Config.Launch.BootReminder = $global:cfgLaunchBootReminder
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }   
 })
 $MainForm.Controls.Add($global:BootReminderCheckBox)
 
 # Boot timer dropdown
-$global:BootReminderSelect = CreateDropDownMenu -locx 360 -locy 85 -sizex 30 -sizey 20
+$global:BootReminderSelect = CreateDropDownMenu -locx 360 -locy 315 -sizex 30 -sizey 20
 1..4 | ForEach-Object { $global:BootReminderSelect.Items.Add($_) } | Out-Null
-$global:BootReminderSelect.SelectedItem = 3
+$cfgLaunchBootTimerInt = [int]$global:cfgLaunchBootTimer
+$global:BootReminderSelect.SelectedItem = $global:cfgLaunchBootTimerInt
+$global:BootReminderSelect.add_SelectedIndexChanged({
+    $global:cfgLaunchBootTimerInt = $global:BootReminderSelect.SelectedItem
+    $global:cfgLaunchBootTimer = $global:cfgLaunchBootTimerInt.ToString()
+    $global:Config.Launch.BootTimer = $global:cfgLaunchBootTimer
+    if ($global:AutoSaveMenuItem.Checked) {
+       $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
 $MainForm.Controls.Add($global:BootReminderSelect)
 
 # Boot timer label
-$BootReminderLabel = CreateLabel -text "Tuntia" -locx 390 -locy 89 -sizex 40 -sizey 15
+$BootReminderLabel = CreateLabel -text "Tuntia" -locx 390 -locy 319 -sizex 40 -sizey 15
 $MainForm.Controls.Add($BootReminderLabel)
 
 # Boot timer time left label
-$global:BootReminderTimeLeftLabel = CreateLabel -text "Time left: $global:CountDown" -locx 430 -locy 89 -sizex 150 -sizey 15
+$global:BootReminderTimeLeftLabel = CreateLabel -text "Time left: $global:CountDown" -locx 430 -locy 319 -sizex 150 -sizey 15
 $MainForm.Controls.Add($global:BootReminderTimeLeftLabel)
 
+# Tapa extra prosessit checkbox startille
+$global:KillExtraProcessCheckBox = CreateCheckBox -text "Tapa extra prosessit" -locx 360 -locy 210 -sizex 130 -sizey 20
+if ($global:cfgLaunchKillProcess -is [bool]) {
+    $global:KillExtraProcessCheckBox.Checked = $global:cfgLaunchKillProcess
+} else {
+$global:KillExtraProcessCheckBox.Checked = $false
+}
+# Lisävalintojen Visibility
+$global:KillExtraProcessCheckBox.add_CheckedChanged({
+    $global:KillDuplicateTslGameCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+    $global:KillPUBGLauncherCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+    $global:KillBELauncherCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+    $global:KillDuplicateTslGameCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+    $global:KillPUBGLauncherCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+    $global:KillBELauncherCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+    $global:cfgLaunchKillProcess = $global:KillExtraProcessCheckBox.Checked
+    $global:Config.Launch.KillProcess = $global:cfgLaunchKillProcess
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+$MainForm.Controls.Add($global:KillExtraProcessCheckBox)
 
-#Launch PUBG button
+# Kill Duplicate TslGame.exe checkbox startille
+$global:KillDuplicateTslGameCheckBox = CreateCheckBox -text "Tapa turha TslGame.exe" -locx 380 -locy 230 -sizex 170 -sizey 20
+if ($global:cfgLaunchKillDuplicateTslGame -is [bool]) {
+    $global:KillDuplicateTslGameCheckBox.Checked = $global:cfgLaunchKillDuplicateTslGame
+} else {
+$global:KillDuplicateTslGameCheckBox.Checked = $false
+}
+$global:KillDuplicateTslGameCheckBox.add_CheckedChanged({
+    $global:cfgLaunchKillDuplicateTslGame = $global:KillDuplicateTslGameCheckBox.Checked
+    $global:Config.Launch.KillDuplicateTslGame = $global:cfgLaunchKillDuplicateTslGame
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+
+$MainForm.Controls.Add($global:KillDuplicateTslGameCheckBox)
+
+# Kill ExecPubg.exe checkbox startille
+$global:KillPUBGLauncherCheckBox = CreateCheckBox -text "Tapa ExecPubg.exe" -locx 380 -locy 250 -sizex 170 -sizey 20
+if ($global:cfgLaunchKillPubgLauncher -is [bool]) {
+    $global:KillPUBGLauncherCheckBox.Checked = $global:cfgLaunchKillPubgLauncher
+} else {
+$global:KillPUBGLauncherCheckBox.Checked = $false
+}
+$global:KillPUBGLauncherCheckBox.add_CheckedChanged({
+    $global:cfgLaunchKillPubgLauncher = $global:KillPUBGLauncherCheckBox.Checked
+    $global:Config.Launch.KillPubgLauncher = $global:cfgLaunchKillPubgLauncher
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    } 
+})
+
+$MainForm.Controls.Add($global:KillPUBGLauncherCheckBox)
+
+# Kill TslGame_BE.exe checkbox
+$global:KillBELauncherCheckBox = CreateCheckBox -text "Tapa TslGame_BE.exe" -locx 380 -locy 270 -sizex 170 -sizey 20
+if ($global:cfgLaunchKillBELauncher -is [bool]) {
+    $global:KillBELauncherCheckBox.Checked = $global:cfgLaunchKillBELauncher
+} else {
+$global:KillBELauncherCheckBox.Checked = $false
+}
+$global:KillBELauncherCheckBox.add_CheckedChanged({
+    $global:cfgLaunchKillBELauncher = $global:KillBELauncherCheckBox.Checked
+    $global:Config.Launch.KillBELauncher = $global:cfgLaunchKillBELauncher
+    if ($global:AutoSaveMenuItem.Checked) {
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
+}) 
+$MainForm.Controls.Add($global:KillBELauncherCheckBox)
+
+# Piilotetaa ja siirretään lisävalinnat
+if (-not ($global:DeleteSavedAtStartCheckBox.Checked)) {
+    $global:KillExtraProcessCheckBox.Location = New-Object System.Drawing.Point(360, 150)
+    $global:KillDuplicateTslGameCheckBox.Location = New-Object System.Drawing.Point(380, 170)
+    $global:KillPUBGLauncherCheckBox.Location = New-Object System.Drawing.Point(380, 190)
+    $global:KillBELauncherCheckBox.Location = New-Object System.Drawing.Point(380, 210)
+}
+
+# Säädetään näkyvyydet tallenettujen settareiden mukaan
+$global:KeepReplaysAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KeepObserverAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KeepCrashesAtStartCheckBox.Enabled = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KeepReplaysAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KeepObserverAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KeepCrashesAtStartCheckBox.Visible = $global:DeleteSavedAtStartCheckBox.Checked
+$global:KillDuplicateTslGameCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+$global:KillPUBGLauncherCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+$global:KillBELauncherCheckBox.Enabled = $global:KillExtraProcessCheckBox.Checked
+$global:KillDuplicateTslGameCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+$global:KillPUBGLauncherCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+$global:KillBELauncherCheckBox.Visible = $global:KillExtraProcessCheckBox.Checked
+$global:BootReminderSelect.Enabled = $global:BootReminderCheckBox.Checked
+$global:BootReminderSelect.Visible = $global:BootReminderCheckBox.Checked
+$global:BootReminderLabel.Enabled = $global:BootReminderCheckBox.Checked
+$global:BootReminderLabel.Visible = $global:BootReminderCheckBox.Checked
+$global:BootReminderTimeLeftLabel.Enabled = $global:BootReminderCheckBox.Checked
+$global:BootReminderTimeLeftLabel.Visible = $global:BootReminderCheckBox.Checked
+
+$global:DeleteSavedAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KillExtraProcessCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:BootReminderCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KillDuplicateTslGameCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KillPUBGLauncherCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KillBELauncherCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:BootReminderSelect.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:BootReminderLabel.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:BootReminderTimeLeftLabel.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KeepReplaysAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KeepObserverAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:KeepCrashesAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:DeleteMoviesAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+$global:ChangeObserverPackAtStartCheckBox.Enabled = $global:EnableLaunchSettingsCheckBox.Checked
+
+# Launch PUBG button
 $LaunchButton = CreateButton -text "Start" -locx 340 -locy 25 -sizex 80 -sizey 20
 $LaunchButton.Add_Click({
-    if ($global:DeleteMoviesAtStartCheckBox.Checked) {
-        Delete-Movies -SkipConfirmation $true
-        Start-Sleep -Seconds 1
-    }
-    if ($global:DeleteSavedAtStartCheckBox.Checked) {
-        Clean-SavedFolder -SkipConfirmation $true
-        Start-Sleep -Seconds 1
-    }
-    if ($global:BootReminderCheckBox.Checked) {        
-        Boot-Timer
-        Start-Sleep -Seconds 1
-    }
     Start-PUBG
 })
 $MainForm.Controls.Add($LaunchButton)
 
-#Kill PUBG button
+# Kill PUBG button
 $KillButton = CreateButton -text "Kill" -locx 420 -locy 25 -sizex 80 -sizey 20
 $KillButton.Add_Click({
     Kill-PUBG
-    # Suljetaan timer, jos semmonen löytyy
-    if ($global:BootTimer -ne $null) {
-        $global:BootTimer.Stop()
-        $global:BootTimer.Dispose()
-        $global:BootReminderTimeLeftLabel.Text = "Time left:"
-    }
 })
 $MainForm.Controls.Add($KillButton)
 
-#Restart PUBG button 
+# Restart PUBG button 
 $RestartButton = CreateButton -text "Restart" -locx 500 -locy 25 -sizex 80 -sizey 20
 $RestartButton.Add_Click({
-    Kill-PUBG
-    Start-Sleep -Seconds 1
-    if ($global:DeleteMoviesAtStartCheckBox.Checked) {
-        Delete-Movies -SkipConfirmation $true
-        Start-Sleep -Seconds 1
-    }
-    if ($global:DeleteSavedAtStartCheckBox.Checked) {
-        Clean-SavedFolder -SkipConfirmation $true
-        Start-Sleep -Seconds 1
-    }
-    if ($global:BootReminderCheckBox.Checked) {        
-        Boot-Timer
-        Start-Sleep -Seconds 1
-    }
-    Start-PUBG
+    Restart-PUBG
 })
 $MainForm.Controls.Add($RestartButton)
 
+# Save Settings button 
+$SaveButton = CreateButton -text "Save Settings" -locx 415 -locy 465 -sizex 90 -sizey 20
+$SaveButton.Add_Click({
+    $global:Config | Out-IniFile -Force Config.ini
+})
+$MainForm.Controls.Add($SaveButton)
 
+
+### Siirretty menu valikkoon
+<# Remember Settings CheckBox (AutoSave)
+$global:AutoSaveCheckBox = CreateCheckBox -text "Muista asetukset" -locx 415 -locy 430 -sizex 150 -sizey 20
+if ($global:cfgMainRememberSettings -is [bool]) {
+    $global:AutoSaveCheckBox.Checked = $global:cfgMainRememberSettings
+} else {
+    $global:AutoSaveCheckBox.Checked = $false
+}
+$global:AutoSaveCheckBox.Add_CheckedChanged({ 
+    $global:cfgMainRememberSettings = $global:AutoSaveCheckBox.Checked
+    $global:Config.Main.RememberSettings = $global:cfgMainRememberSettings
+    if ($global:AutoSaveCheckBox.Checked){ 
+        $global:Config | Out-IniFile -Force "Config.ini"
+    }
+})
+$MainForm.Controls.Add($global:AutoSaveCheckBox)#>
 
 
 
