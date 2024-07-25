@@ -93,8 +93,8 @@ function ChangeValues-GameUserSettings {
         }
 
     })
-    #>
-    $ChangeForm.Controls.Add($SaveButton)
+    
+    $ChangeForm.Controls.Add($SaveButton)#>
 
     # Cancel
     $CancelButton = New-Object Windows.Forms.Button -Property @{
